@@ -44,9 +44,8 @@ export default function Header() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-800">Iglesia Adventista</h1>
-                <p className="text-sm text-gray-600">del Séptimo Día</p>
-                <p className="text-xs text-gray-500">DIVISIÓN SUDAMERICANA</p>
+                <h1 className="text-lg font-bold text-gray-800">Iglesia Adventista del 7mo Dia</h1>
+                <p className="text-lg font-bold text-gray-800">CENTRAL LINAJE REAL</p>
               </div>
             </div>
 

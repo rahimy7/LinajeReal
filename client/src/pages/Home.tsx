@@ -15,7 +15,7 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <Header />
       <HeroSection />
-      <ChurchFinder />
+     
       <main className="bg-white">
         <FeaturedContent />
         <NewsSection />
@@ -50,7 +50,7 @@ export default function Home() {
             </div>
 
             {/* Feliz7Play Section */}
-            <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-8 text-center text-white mb-12">
+           {/*  <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-8 text-center text-white mb-12">
               <div className="flex items-center justify-center mb-6">
                 <i className="fas fa-play-circle text-4xl mr-3"></i>
                 <h3 className="text-3xl font-bold">Feliz7Play</h3>
@@ -62,12 +62,12 @@ export default function Home() {
               >
                 Acceder
               </a>
-            </div>
+            </div> */}
           </div>
         </section>
         <VideosSection />
         <HealthSection />
-        <ClassSection />
+        {/* <ClassSection /> */}
         <DownloadsSection />
         <CallToAction />
       </main>

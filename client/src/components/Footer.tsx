@@ -16,7 +16,7 @@ export default function Footer() {
             </svg>
           </div>
           <h3 className="text-xl font-bold">Iglesia Adventista del Séptimo Día</h3>
-          <p className="text-blue-200">División Sudamericana</p>
+          <p className="text-blue-200">Asociación Central Dominicana</p>
         </div>
         
         <div className="grid md:grid-cols-4 gap-8 mb-8">
@@ -70,7 +70,7 @@ export default function Footer() {
         </div>
         
         <div className="border-t border-blue-800 pt-8 text-center text-blue-200 text-sm">
-          <p>&copy; 2025 Iglesia Adventista del Séptimo Día - División Sudamericana. Todos los derechos reservados.</p>
+          <p>&copy; Iglesia Adventista del Séptimo Día - Central Linaje Real. Todos los derechos reservados.</p>
         </div>
       </div>
     </footer>
