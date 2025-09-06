@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iglesia Adventista del Séptimo Día - Portal Oficial</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: #1a4b73;
+            color: white;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: #ffd700;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.8rem;
+            color: #1a4b73;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: #ffd700;
+        }
+
+        /* Search Bar */
+        .search-container {
+            position: relative;
+            margin-left: 2rem;
+        }
+
+        .search-input {
+            padding: 8px 40px 8px 15px;
+            border: none;
+            border-radius: 25px;
+            width: 250px;
+            font-size: 0.9rem;
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #1a4b73;
+            cursor: pointer;
+        }
+
+        /* Hero Section - NUEVO DISEÑO */
+        .hero {
+            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><defs><linearGradient id="cityGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%2387CEEB;stop-opacity:1" /><stop offset="50%" style="stop-color:%234682B4;stop-opacity:1" /><stop offset="100%" style="stop-color:%23708090;stop-opacity:1" /></linearGradient></defs><rect fill="url(%23cityGrad)" width="1200" height="600"/><g fill="%23ffffff" opacity="0.15"><rect x="50" y="400" width="30" height="200"/><rect x="100" y="350" width="40" height="250"/><rect x="160" y="300" width="35" height="300"/><rect x="220" y="380" width="25" height="220"/><rect x="270" y="320" width="45" height="280"/><rect x="340" y="280" width="30" height="320"/><rect x="390" y="360" width="35" height="240"/><rect x="450" y="250" width="50" height="350"/><rect x="520" y="340" width="40" height="260"/><rect x="580" y="290" width="35" height="310"/><rect x="640" y="370" width="25" height="230"/><rect x="690" y="310" width="40" height="290"/><rect x="750" y="260" width="45" height="340"/><rect x="820" y="350" width="30" height="250"/><rect x="870" y="280" width="35" height="320"/><rect x="930" y="320" width="40" height="280"/><rect x="990" y="240" width="50" height="360"/><rect x="1060" y="380" width="30" height="220"/><rect x="1110" y="300" width="35" height="300"/><rect x="150" y="450" width="20" height="150"/><rect x="200" y="420" width="25" height="180"/><rect x="250" y="380" width="30" height="220"/><rect x="300" y="440" width="20" height="160"/><rect x="350" y="400" width="25" height="200"/><rect x="400" y="350" width="35" height="250"/><rect x="460" y="430" width="20" height="170"/><rect x="500" y="410" width="25" height="190"/><rect x="550" y="370" width="30" height="230"/><rect x="600" y="450" width="20" height="150"/><rect x="650" y="420" width="25" height="180"/><rect x="700" y="380" width="30" height="220"/><rect x="750" y="440" width="20" height="160"/><rect x="800" y="400" width="25" height="200"/><rect x="850" y="350" width="35" height="250"/><rect x="910" y="430" width="20" height="170"/><rect x="950" y="410" width="25" height="190"/><rect x="1000" y="370" width="30" height="230"/><rect x="1050" y="450" width="20" height="150"/></g></svg>');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 40px 0;
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .hero-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            gap: 3rem;
+        }
+
+        .social-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            z-index: 10;
+        }
+
+        .social-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            font-size: 2rem;
+            transition: all 0.3s ease;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .social-btn:hover {
+            transform: scale(1.15);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .social-btn.instagram {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .social-btn.instagram:hover {
+            background: linear-gradient(45deg, #833ab4, #fd1d1d, #fcb045);
+            color: white;
+        }
+
+        .social-btn.facebook {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .social-btn.facebook:hover {
+            background: #1877f2;
+            color: white;
+        }
+
+        .social-btn.youtube {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .social-btn.youtube:hover {
+            background: #ff0000;
+            color: white;
+        }
+
+        .video-container {
+            flex: 1;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 17px;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            background: #f8f9fa;
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #1a4b73;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            background: #1a4b73;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 2rem;
+            color: white;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #1a4b73;
+        }
+
+        /* News Section */
+        .news {
+            padding: 80px 0;
+        }
+
+        .news h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #1a4b73;
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .news-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .news-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .news-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(45deg, #1a4b73, #4a90b8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+        }
+
+        .news-content {
+            padding: 1.5rem;
+        }
+
+        .news-date {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .news-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #1a4b73;
+        }
+
+        .news-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Values Section */
+        .values {
+            padding: 80px 0;
+            background: #1a4b73;
+            color: white;
+        }
+
+        .values h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .value-item {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .value-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 1rem;
+        }
+
+        .value-item h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Footer */
+        footer {
+            background: #0d2942;
+            color: white;
+            padding: 60px 0 30px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            margin-bottom: 1rem;
+            color: #ffd700;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section a {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-section a:hover {
+            color: #ffd700;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #333;
+            padding-top: 2rem;
+            text-align: center;
+            color: #999;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            nav ul {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 1rem;
+            }
+
+            .hero {
+                padding: 30px 0;
+                min-height: 70vh;
+            }
+
+            .hero-container {
+                flex-direction: column;
+                gap: 2rem;
+            }
+
+            .social-buttons {
+                flex-direction: row;
+                justify-content: center;
+                order: 2;
+                gap: 1rem;
+            }
+
+            .video-container {
+                order: 1;
+                max-width: 100%;
+            }
+
+            .social-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+
+            .features h2, .news h2, .values h2 {
+                font-size: 2rem;
+            }
+
+            .news-grid, .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-container {
+                margin-left: 0;
+                margin-top: 1rem;
+            }
+
+            .search-input {
+                width: 200px;
+            }
+        }
+
+        /* Animation for loading */
+        .fade-in {
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">✝</div>
+                    <span>Iglesia Adventista del Séptimo Día</span>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="#inicio">Inicio</a></li>
+                        <li><a href="#creencias">Creencias</a></li>
+                        <li><a href="#iglesias">Iglesias</a></li>
+                        <li><a href="#recursos">Recursos</a></li>
+                        <li><a href="#contacto">Contacto</a></li>
+                    </ul>
+                </nav>
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="Buscar...">
+                    <button class="search-btn">🔍</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- NUEVA SECCIÓN HERO CON VIDEO Y REDES SOCIALES -->
+        <section class="hero" id="inicio">
+            <div class="container">
+                <div class="hero-container fade-in">
+                    <div class="social-buttons">
+                        <a href="https://instagram.com/adventistas" class="social-btn instagram" target="_blank" title="Instagram">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                            </svg>
+                        </a>
+                        <a href="https://facebook.com/adventistas" class="social-btn facebook" target="_blank" title="Facebook">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                        </a>
+                        <a href="https://youtube.com/@adventistas" class="social-btn youtube" target="_blank" title="YouTube">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                            </svg>
+                        </a>
+                    </div>
+                    
+                    <div class="video-container">
+                        <div class="video-wrapper">
+                            <iframe 
+                                src="https://www.youtube.com/embed/HyoKx3hDnKQ?autoplay=0&controls=1&rel=0&showinfo=0&modestbranding=1" 
+                                title="TEMA 02 | Serie de Agosto | Iglesia Miami Central SDA - CULTO DIVINO"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features" id="creencias">
+            <div class="container">
+                <h2>Nuestras Áreas de Acción</h2>
+                <div class="features-grid">
+                    <div class="feature-card fade-in">
+                        <div class="feature-icon">📖</div>
+                        <h3>Estudio Bíblico</h3>
+                        <p>Los adventistas del séptimo día aceptan la Biblia como su norma de fe y práctica, manteniendo creencias fundamentales basadas únicamente en las Sagradas Escrituras.</p>
+                    </div>
+                    <div class="feature-card fade-in">
+                        <div class="feature-icon">❤️</div>
+                        <h3>Acción Social</h3>
+                        <p>Una de las principales áreas de acción de los adventistas es la atención social y humanitaria a miles de personas, en armonía con el ministerio del propio Cristo.</p>
+                    </div>
+                    <div class="feature-card fade-in">
+                        <div class="feature-icon">🌍</div>
+                        <h3>Misión Mundial</h3>
+                        <p>Desde la iglesia local hasta la sede mundial, trabajamos para fortalecer la fe, la enseñanza de la Biblia y apoyar iniciativas dirigidas a miembros y la sociedad.</p>
+                    </div>
+                    <div class="feature-card fade-in">
+                        <div class="feature-icon">🏥</div>
+                        <h3>Salud Integral</h3>
+                        <p>Promovemos un estilo de vida saludable basado en principios bíblicos, incluyendo la promoción de hábitos alimentarios y de vida saludables.</p>
+                    </div>
+                    <div class="feature-card fade-in">
+                        <div class="feature-icon">👨‍👩‍👧‍👦</div>
+                        <h3>Vida Familiar</h3>
+                        <p>Fortalecemos las relaciones familiares y comunitarias, construyendo vínculos duraderos basados en el respeto y el cuidado mutuo.</p>
+                    </div>
+                    <div class="feature-card fade-in">
+                        <div class="feature-icon">🎓</div>
+                        <h3>Educación</h3>
+                        <p>Mantenemos un sistema educativo integral que combina la excelencia académica con los valores y principios cristianos.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="news">
+            <div class="container">
+                <h2>Noticias y Actividades</h2>
+                <div class="news-grid" id="news-container">
+                    <!-- Las noticias se cargarán dinámicamente desde el JSON -->
+                </div>
+            </div>
+        </section>
+
+        <section class="values">
+            <div class="container">
+                <h2>Impacto Global</h2>
+                <div class="values-grid">
+                    <div class="value-item fade-in">
+                        <div class="value-number">8</div>
+                        <h3>Países Sudamericanos</h3>
+                        <p>Portal oficial para ocho países de Sudamérica</p>
+                    </div>
+                    <div class="value-item fade-in">
+                        <div class="value-number">131</div>
+                        <h3>Países con ADRA</h3>
+                        <p>Agencia de ayuda humanitaria presente globalmente</p>
+                    </div>
+                    <div class="value-item fade-in">
+                        <div class="value-number">4000+</div>
+                        <h3>Empleados ADRA</h3>
+                        <p>Personas dedicadas a la ayuda humanitaria</p>
+                    </div>
+                    <div class="value-item fade-in">
+                        <div class="value-number">∞</div>
+                        <h3>Esperanza</h3>
+                        <p>Llevando esperanza al mundo sin límites</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer id="contacto">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Navegación</h3>
+                    <ul>
+                        <li><a href="#inicio">Inicio</a></li>
+                        <li><a href="#creencias">Creencias</a></li>
+                        <li><a href="#iglesias">Encontrar Iglesia</a></li>
+                        <li><a href="#recursos">Recursos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Recursos</h3>
+                    <ul>
+                        <li><a href="#">Estudios Bíblicos</a></li>
+                        <li><a href="#">Materiales de Adoración</a></li>
+                        <li><a href="#">Programas Radiales</a></li>
+                        <li><a href="#">Escuela Sabática</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Organización</h3>
+                    <ul>
+                        <li><a href="#">División Sudamericana</a></li>
+                        <li><a href="#">Uniones</a></li>
+                        <li><a href="#">Asociaciones</a></li>
+                        <li><a href="#">ADRA</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Contacto</h3>
+                    <p>División Sudamericana<br>
+                    Brasília, Brasil<br>
+                    info@adventistas.org</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Iglesia Adventista del Séptimo Día. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Datos JSON integrados
+        const newsData = {
+            "noticias": [
+                {
+                    "id": 1,
+                    "titulo": "Fortaleciendo Vínculos Comunitarios",
+                    "fecha": "2025-01-15",
+                    "resumen": "Miembros de la Iglesia Adventista promovieron hábitos saludables y fortalecieron vínculos con la comunidad local.",
+                    "imagen": "📰",
+                    "categoria": "Comunidad"
+                },
+                {
+                    "id": 2,
+                    "titulo": "Congreso Mundial de Jóvenes",
+                    "fecha": "2025-01-10",
+                    "resumen": "Jóvenes adventistas de todo el mundo se reunieron para renovar su compromiso con la misión y el servicio.",
+                    "imagen": "👥",
+                    "categoria": "Juventud"
+                },
+                {
+                    "id": 3,
+                    "titulo": "Campaña de Salud Integral",
+                    "fecha": "2025-01-05",
+                    "resumen": "Nueva iniciativa promueve el bienestar físico, mental y espiritual en las comunidades adventistas.",
+                    "imagen": "🏥",
+                    "categoria": "Salud"
+                },
+                {
+                    "id": 4,
+                    "titulo": "Proyecto Educativo Innovador",
+                    "fecha": "2024-12-28",
+                    "resumen": "Institución adventista presenta nuevo método de enseñanza que integra fe y ciencia de manera revolucionaria.",
+                    "imagen": "🎓",
+                    "categoria": "Educación"
+                },
+                {
+                    "id": 5,
+                    "titulo": "ADRA Responde a Crisis Humanitaria",
+                    "fecha": "2024-12-20",
+                    "resumen": "La agencia adventista de desarrollo y ayuda humanitaria moviliza recursos para atender emergencia internacional.",
+                    "imagen": "🌍",
+                    "categoria": "Humanitaria"
+                },
+                {
+                    "id": 6,
+                    "titulo": "Semana de Oración Global",
+                    "fecha": "2024-12-15",
+                    "resumen": "Adventistas de todo el mundo se unen en una semana especial de oración y reflexión espiritual.",
+                    "imagen": "🙏",
+                    "categoria": "Espiritualidad"
+                }
+            ]
+        };
+
+        // Función para cargar noticias
+        function loadNews() {
+            const newsContainer = document.getElementById('news-container');
+            
+            newsData.noticias.forEach((noticia, index) => {
+                const newsCard = document.createElement('div');
+                newsCard.className = 'news-card fade-in';
+                newsCard.style.animationDelay = `${index * 0.1}s`;
+                
+                const fecha = new Date(noticia.fecha).toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                newsCard.innerHTML = `
+                    <div class="news-image">${noticia.imagen}</div>
+                    <div class="news-content">
+                        <div class="news-date">${fecha} • ${noticia.categoria}</div>
+                        <h3>${noticia.titulo}</h3>
+                        <p>${noticia.resumen}</p>
+                    </div>
+                `;
+                
+                newsContainer.appendChild(newsCard);
+            });
+        }
+
+        // Función para smooth scroll
+        function smoothScroll() {
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        }
+
+        // Función para animaciones de scroll
+        function observeElements() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animationPlayState = 'running';
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            document.querySelectorAll('.fade-in').forEach(el => {
+                el.style.animationPlayState = 'paused';
+                observer.observe(el);
+            });
+        }
+
+        // Funcionalidad de búsqueda
+        function setupSearch() {
+            const searchInput = document.querySelector('.search-input');
+            const searchBtn = document.querySelector('.search-btn');
+            
+            function performSearch() {
+                const query = searchInput.value.toLowerCase().trim();
+                if (query) {
+                    alert(`Buscando: "${query}"\n\nEsta es una demo. En un sitio real, esto buscaría en toda la base de datos.`);
+                }
+            }
+            
+            searchBtn.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            loadNews();
+            smoothScroll();
+            observeElements();
+            setupSearch();
+            
+            // Agregar efectos de hover dinámicos
+            document.querySelectorAll('.feature-card, .news-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-10px) scale(1.02)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+        });
+
+        // Efecto de parallax sutil en el hero
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const hero = document.querySelector('.hero');
+            if (hero) {
+                hero.style.transform = `translateY(${scrolled * 0.2}px)`;
+            }
+        });
+    </script>
+</body>
+</html>

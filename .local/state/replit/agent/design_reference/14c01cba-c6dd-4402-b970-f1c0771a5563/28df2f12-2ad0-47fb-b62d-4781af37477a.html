@@ -1,0 +1,708 @@
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iglesia Adventista del Séptimo Día - División Sudamericana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                borderRadius: {
+                    lg: "var(--radius)",
+                    md: "calc(var(--radius) - 2px)", 
+                    sm: "calc(var(--radius) - 4px)",
+                },
+                colors: {
+                    background: "var(--background)",
+                    foreground: "var(--foreground)",
+                    card: {
+                        DEFAULT: "var(--card)",
+                        foreground: "var(--card-foreground)",
+                    },
+                    primary: {
+                        DEFAULT: "var(--primary)",
+                        foreground: "var(--primary-foreground)",
+                    },
+                    secondary: {
+                        DEFAULT: "var(--secondary)",
+                        foreground: "var(--secondary-foreground)",
+                    },
+                    muted: {
+                        DEFAULT: "var(--muted)",
+                        foreground: "var(--muted-foreground)",
+                    },
+                    accent: {
+                        DEFAULT: "var(--accent)",
+                        foreground: "var(--accent-foreground)",
+                    },
+                    border: "var(--border)",
+                    input: "var(--input)",
+                    ring: "var(--ring)",
+                },
+                fontFamily: {
+                    sans: ["Inter", "Roboto", "sans-serif"],
+                }
+            },
+        }
+    };
+    </script>
+    <style>
+        :root {
+            --background: hsl(0 0% 100%);
+            --foreground: hsl(222.2 84% 4.9%);
+            --card: hsl(0 0% 100%);
+            --card-foreground: hsl(222.2 84% 4.9%);
+            --primary: hsl(221.2 83.2% 53.3%);
+            --primary-foreground: hsl(210 40% 98%);
+            --secondary: hsl(210 40% 96%);
+            --secondary-foreground: hsl(222.2 84% 4.9%);
+            --muted: hsl(210 40% 96%);
+            --muted-foreground: hsl(215.4 16.3% 46.9%);
+            --accent: hsl(210 40% 96%);
+            --accent-foreground: hsl(222.2 84% 4.9%);
+            --border: hsl(214.3 31.8% 91.4%);
+            --input: hsl(214.3 31.8% 91.4%);
+            --ring: hsl(221.2 83.2% 53.3%);
+            --radius: 0.5rem;
+        }
+        
+        .hero-gradient {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #f97316 100%);
+        }
+        
+        .carousel-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .carousel-slide {
+            transition: transform 0.5s ease-in-out;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-menu {
+                display: none;
+            }
+            .mobile-menu.active {
+                display: block;
+            }
+        }
+    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-background text-foreground">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <!-- Top Bar -->
+        <div class="bg-gray-100 py-2">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-end space-x-4 text-sm text-gray-600">
+                    <a href="#" class="hover:text-blue-600">INSTITUCIONAL</a>
+                    <a href="#" class="hover:text-blue-600">NOTICIAS</a>
+                    <a href="#" class="hover:text-blue-600">VIDEOS</a>
+                    <a href="#" class="hover:text-blue-600">DOWNLOADS</a>
+                    <a href="#" class="hover:text-blue-600"><i class="fas fa-search"></i> BÚSQUEDA</a>
+                    <a href="#" class="hover:text-blue-600"><i class="fas fa-globe"></i> ES <i class="fas fa-chevron-down text-xs"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Navigation -->
+        <nav class="bg-white border-b">
+            <div class="container mx-auto px-4">
+                <div class="flex items-center justify-between h-20">
+                    <!-- Logo -->
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-blue-800 rounded-full flex items-center justify-center">
+                            <i class="fas fa-church text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-bold text-gray-800">Iglesia Adventista</h1>
+                            <p class="text-sm text-gray-600">del Séptimo Día</p>
+                            <p class="text-xs text-gray-500">DIVISIÓN SUDAMERICANA</p>
+                        </div>
+                    </div>
+
+                    <!-- Desktop Navigation -->
+                    <div class="hidden lg:flex items-center space-x-8">
+                        <a href="#" class="text-blue-600 font-semibold border-b-2 border-blue-600 pb-6">Inicio</a>
+                        <div class="relative group">
+                            <button class="text-gray-700 hover:text-blue-600 flex items-center space-x-1">
+                                <span>Departamentos</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                        </div>
+                        <div class="relative group">
+                            <button class="text-gray-700 hover:text-blue-600 flex items-center space-x-1">
+                                <span>Sedes Regionales</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                        </div>
+                        <div class="relative group">
+                            <button class="text-gray-700 hover:text-blue-600 flex items-center space-x-1">
+                                <span>Sobre Nosotros</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                        </div>
+                        <div class="relative group">
+                            <button class="text-gray-700 hover:text-blue-600 flex items-center space-x-1">
+                                <span>Prensa</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                        </div>
+                        <a href="#" class="text-gray-700 hover:text-blue-600">feliz7play.com</a>
+                    </div>
+
+                    <!-- Mobile Menu Button -->
+                    <button class="lg:hidden p-2" id="mobile-menu-toggle">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Mobile Menu -->
+        <div class="lg:hidden mobile-menu bg-white border-b" id="mobile-menu">
+            <div class="container mx-auto px-4 py-4">
+                <div class="space-y-4">
+                    <a href="#" class="block text-blue-600 font-semibold">Inicio</a>
+                    <a href="#" class="block text-gray-700">Departamentos</a>
+                    <a href="#" class="block text-gray-700">Sedes Regionales</a>
+                    <a href="#" class="block text-gray-700">Sobre Nosotros</a>
+                    <a href="#" class="block text-gray-700">Prensa</a>
+                    <a href="#" class="block text-gray-700">feliz7play.com</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Carousel Section -->
+    <section class="hero-gradient relative overflow-hidden min-h-[600px] flex items-center">
+        <!-- Dramatic sky background image -->
+        <div class="absolute inset-0 bg-cover bg-center opacity-30" style="background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80');"></div>
+        
+        <!-- Figure with raised arms overlaying the scene -->
+        <div class="absolute right-10 top-10 z-10 opacity-80">
+            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=600" alt="Person with raised arms in worship" class="w-64 h-96 object-cover rounded-lg shadow-2xl" />
+        </div>
+
+        <div class="container mx-auto px-4 relative z-20">
+            <div class="max-w-2xl">
+                <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
+                    Semana de la<br>
+                    Esperanza 2025
+                </h2>
+                <div class="text-4xl md:text-5xl lg:text-7xl font-black text-amber-600 mb-8 leading-none">
+                    LA<br>
+                    VERDAD<br>
+                    REVELA
+                </div>
+                <button class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors duration-200">
+                    ACCEDE
+                </button>
+            </div>
+        </div>
+
+        <!-- Carousel Indicators -->
+        <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2">
+            <div class="w-3 h-3 bg-white rounded-full opacity-100"></div>
+            <div class="w-3 h-3 bg-white rounded-full opacity-50"></div>
+            <div class="w-3 h-3 bg-white rounded-full opacity-50"></div>
+            <div class="w-3 h-3 bg-white rounded-full opacity-50"></div>
+        </div>
+    </section>
+
+    <!-- Church Finder & Quick Access Section -->
+    <section class="bg-blue-800 py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Church Finder -->
+                <div class="md:col-span-2">
+                    <h3 class="text-2xl font-bold text-white mb-4">Encuentra una iglesia</h3>
+                    <p class="text-blue-200 mb-6">Iglesias adventistas ubicadas en la División Sudamericana.</p>
+                    <div class="space-y-4">
+                        <p class="text-white font-semibold">Búsqueda de iglesias</p>
+                        <div class="flex">
+                            <input type="text" placeholder="Búsqueda por código postal, ciudad, barrio..." 
+                                   class="flex-1 px-4 py-3 rounded-l-lg border-0 focus:ring-2 focus:ring-blue-400">
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-r-lg font-semibold">
+                                BÚSQUEDA
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Access Cards -->
+                <div class="space-y-4">
+                    <div class="bg-white rounded-lg p-4 flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-praying-hands text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-800">Para tu sábado</h4>
+                            <p class="text-sm text-gray-600">Materiales que complementan tu momento de adoración.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-mobile-alt text-orange-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-800">7Me</h4>
+                            <p class="text-sm text-gray-600">Tu iglesia más cerca de ti</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Sections -->
+    <main class="bg-white">
+        
+        <!-- Featured Content Grid -->
+        <section class="py-16">
+            <div class="container mx-auto px-4">
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+                    <!-- Probad y Ved -->
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 text-center">
+                        <!-- Peaceful nature scene representing spiritual content -->
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=300" alt="Serene landscape with golden light" class="w-full h-32 object-cover rounded-lg mb-4" />
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Probad y Ved</h3>
+                        <p class="text-gray-600 text-sm mb-4">Probad y Ved trae historias emocionantes e inspiradoras.</p>
+                        <a href="#" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">Accede</a>
+                    </div>
+
+                    <!-- Escuela Sabática -->
+                    <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 text-center">
+                        <!-- Study materials and books representing sabbath school -->
+                        <img src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=300" alt="Open books and study materials" class="w-full h-32 object-cover rounded-lg mb-4" />
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">ESCUELA SABÁTICA</h3>
+                        <p class="text-gray-600 text-sm mb-4">Los materiales del 4º Trimestre 2025 ya están disponibles para descargar.</p>
+                        <a href="#" class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">¡Accede a los contenidos!</a>
+                    </div>
+
+                    <!-- Semana de la Esperanza -->
+                    <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6 text-center">
+                        <!-- Sunrise or hope-themed image -->
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=300" alt="Sunrise over mountains symbolizing hope" class="w-full h-32 object-cover rounded-lg mb-4" />
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Semana de la Esperanza 2025</h3>
+                        <p class="text-gray-600 text-sm mb-4">Únete a esta semana especial de evangelización y esperanza.</p>
+                        <a href="#" class="inline-block bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">ACCEDE</a>
+                    </div>
+
+                    <!-- 7Class -->
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 text-center">
+                        <!-- Digital learning or classroom setting -->
+                        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=300" alt="Students learning in modern classroom" class="w-full h-32 object-cover rounded-lg mb-4" />
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">7Class</h3>
+                        <p class="text-gray-600 text-sm mb-4">7Class es una plataforma de videoclases enfocada en la educación cristiana y el desarrollo personal.</p>
+                        <a href="#" class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">Conoce</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- News Section -->
+        <section class="py-16 bg-gray-50">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-800">Noticias</h2>
+                    <a href="#" class="text-blue-600 hover:text-blue-700 font-semibold">Más noticias</a>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- News Article 1 -->
+                    <article class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                        <!-- ADRA Peru humanitarian work image -->
+                        <img src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=400" alt="Humanitarian aid workers helping community" class="w-full h-48 object-cover" />
+                        <div class="p-6">
+                            <div class="text-sm text-blue-600 font-semibold mb-2">Proyectos Sociales</div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-3">ADRA Perú cumple 60 años llevando ayuda humanitaria y esperanza en el país</h3>
+                            <p class="text-gray-600 text-sm">Con acciones de voluntariado, la agencia humanitaria en Perú, reafirmó su legado de servicio con justicia, compasión y amor.</p>
+                        </div>
+                    </article>
+
+                    <!-- News Article 2 -->
+                    <article class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                        <!-- Siblings or family relationship image -->
+                        <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=400" alt="Happy siblings playing together in warm light" class="w-full h-48 object-cover" />
+                        <div class="p-6">
+                            <div class="text-sm text-green-600 font-semibold mb-2">Comportamiento</div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-3">¿Hermanos o rivales?</h3>
+                            <p class="text-gray-600 text-sm">La relación entre hermanos es uno de los lazos más duraderos y constantes, por eso vale la pena construirla con respeto y cuidado.</p>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Destacados Section -->
+        <section class="py-16">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl font-bold text-gray-800 mb-8">Destacados</h2>
+                <div class="grid md:grid-cols-3 gap-6 mb-12">
+                    <a href="#" class="block bg-blue-600 hover:bg-blue-700 text-white rounded-xl p-6 text-center transition-colors">
+                        <i class="fas fa-book-open text-3xl mb-4"></i>
+                        <h3 class="text-xl font-semibold">Escuela Sabática</h3>
+                    </a>
+                    <a href="#" class="block bg-green-600 hover:bg-green-700 text-white rounded-xl p-6 text-center transition-colors">
+                        <i class="fas fa-users text-3xl mb-4"></i>
+                        <h3 class="text-xl font-semibold">Jóvenes</h3>
+                    </a>
+                    <a href="#" class="block bg-orange-600 hover:bg-orange-700 text-white rounded-xl p-6 text-center transition-colors">
+                        <i class="fas fa-medal text-3xl mb-4"></i>
+                        <h3 class="text-xl font-semibold">Conquistadores</h3>
+                    </a>
+                </div>
+
+                <!-- Feliz7Play Section -->
+                <div class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-8 text-center text-white mb-12">
+                    <div class="flex items-center justify-center mb-6">
+                        <i class="fas fa-play-circle text-4xl mr-3"></i>
+                        <h3 class="text-3xl font-bold">Feliz7Play</h3>
+                    </div>
+                    <a href="#" class="inline-block bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">Acceder</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Videos Section -->
+        <section class="py-16 bg-gray-50">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-800">Videos</h2>
+                    <a href="#" class="text-blue-600 hover:text-blue-700 font-semibold">Más videos</a>
+                </div>
+                
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Video 1 -->
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                        <!-- Bible study or sabbath school lesson image -->
+                        <div class="relative">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=450" alt="Teacher giving sabbath school lesson" class="w-full h-48 object-cover" />
+                            <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+                                <i class="fas fa-play-circle text-white text-4xl"></i>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-gray-800">Lección Escuela Sabática (3º trim. 2023)</h3>
+                        </div>
+                    </div>
+
+                    <!-- Video 2 -->
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                        <!-- Jesus encounters or biblical scenes -->
+                        <div class="relative">
+                            <img src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=450" alt="Biblical scene or spiritual encounter" class="w-full h-48 object-cover" />
+                            <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+                                <i class="fas fa-play-circle text-white text-4xl"></i>
+                            </div>
+                            <div class="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm">04:02</div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-gray-800">Encuentros con Jesús | Escuela Sabática Viva</h3>
+                        </div>
+                    </div>
+
+                    <!-- Video 3 -->
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                        <!-- Another sabbath school lesson -->
+                        <div class="relative">
+                            <img src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=450" alt="Study materials and bible for lessons" class="w-full h-48 object-cover" />
+                            <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+                                <i class="fas fa-play-circle text-white text-4xl"></i>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-gray-800">Lección Escuela Sabática (1º trim. 2023)</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Health Section -->
+        <section class="py-16">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl font-bold text-gray-800 mb-8">Quiero vida y salud</h2>
+                
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Health Article 1 -->
+                    <article class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                        <!-- Hope and mental health themed image -->
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" alt="Peaceful sunset representing hope and mental wellbeing" class="w-full h-32 object-cover" />
+                        <div class="p-4">
+                            <div class="text-sm text-blue-600 font-semibold mb-2">Salud Mental</div>
+                            <h3 class="font-bold text-gray-800 text-sm">Esperanza: clave para vivir una vida plena y significativa</h3>
+                        </div>
+                    </article>
+
+                    <!-- Health Article 2 -->
+                    <article class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                        <!-- Vegetarian diet and nutrition -->
+                        <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" alt="Fresh colorful vegetables and healthy vegetarian food" class="w-full h-32 object-cover" />
+                        <div class="p-4">
+                            <div class="text-sm text-green-600 font-semibold mb-2">Salud Física</div>
+                            <h3 class="font-bold text-gray-800 text-sm">Dieta vegetariana rica en hierro: cómo prevenir la anemia naturalmente</h3>
+                        </div>
+                    </article>
+
+                    <!-- Health Article 3 -->
+                    <article class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                        <!-- Anger management and emotional health -->
+                        <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" alt="Person meditating peacefully for emotional balance" class="w-full h-32 object-cover" />
+                        <div class="p-4">
+                            <div class="text-sm text-orange-600 font-semibold mb-2">Salud Mental</div>
+                            <h3 class="font-bold text-gray-800 text-sm">Cómo controlar la ira: guía práctica para manejar este sentimiento</h3>
+                        </div>
+                    </article>
+                </div>
+                
+                <div class="text-center mt-8">
+                    <a href="#" class="text-blue-600 hover:text-blue-700 font-semibold">Más artículos</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7Class Section -->
+        <section class="py-16 bg-gradient-to-br from-purple-50 to-blue-50">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl font-bold text-gray-800 mb-8">IASD - 7Class</h2>
+                
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Course 1 -->
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                        <!-- Children's ministry leadership training -->
+                        <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" alt="Children's ministry leader teaching young kids" class="w-full h-32 object-cover" />
+                        <div class="p-4">
+                            <h3 class="font-bold text-gray-800 text-sm">Nível 8 Curso de Liderazgo del Ministerio Infantil</h3>
+                        </div>
+                    </div>
+
+                    <!-- Course 2 -->
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                        <!-- Health and immunity -->
+                        <img src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" alt="Fresh fruits and healthy immune-boosting foods" class="w-full h-32 object-cover" />
+                        <div class="p-4">
+                            <h3 class="font-bold text-gray-800 text-sm">Inmunidad en Aumento</h3>
+                        </div>
+                    </div>
+
+                    <!-- Course 3 -->
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                        <!-- Family worship -->
+                        <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" alt="Happy family praying together in warm home setting" class="w-full h-32 object-cover" />
+                        <div class="p-4">
+                            <h3 class="font-bold text-gray-800 text-sm">Adoración en Familia</h3>
+                        </div>
+                    </div>
+
+                    <!-- Course 4 -->
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                        <!-- Missionary couples -->
+                        <img src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" alt="Couple working together in community service mission" class="w-full h-32 object-cover" />
+                        <div class="p-4">
+                            <h3 class="font-bold text-gray-800 text-sm">Parejas Misioneras</h3>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-8">
+                    <a href="#" class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">Descubre Más</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Downloads Carousel Section -->
+        <section class="py-16 bg-gray-50">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl font-bold text-gray-800 mb-8">IASD - Downloads</h2>
+                
+                <div class="carousel-container">
+                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- Download 1 -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                            <!-- Spirit of prophecy materials -->
+                            <img src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" alt="Ellen White books and spirit of prophecy materials" class="w-full h-32 object-cover" />
+                            <div class="p-4">
+                                <h3 class="font-bold text-gray-800 text-sm">Día del Espíritu de Profecía 2025</h3>
+                            </div>
+                        </div>
+
+                        <!-- Download 2 -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                            <!-- Easter week materials -->
+                            <img src="https://images.unsplash.com/photo-1485182708500-e8f1f318ba72?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" alt="Easter cross and spring flowers representing holy week" class="w-full h-32 object-cover" />
+                            <div class="p-4">
+                                <h3 class="font-bold text-gray-800 text-sm">Semana Santa 2026</h3>
+                            </div>
+                        </div>
+
+                        <!-- Download 3 -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                            <!-- Youth mission materials -->
+                            <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" alt="Young people on mission work in community" class="w-full h-32 object-cover" />
+                            <div class="p-4">
+                                <h3 class="font-bold text-gray-800 text-sm">Misión Caleb 2026 | Materiales</h3>
+                            </div>
+                        </div>
+
+                        <!-- Download 4 -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                            <!-- Children's ministry materials -->
+                            <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" alt="Children engaged in sabbath school learning activities" class="w-full h-32 object-cover" />
+                            <div class="p-4">
+                                <h3 class="font-bold text-gray-800 text-sm">LLAVE MAESTRA CUNA - INFANTES - PRIMARIOS | 4° TRIMESTRE 2025</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Call to Action Banners -->
+        <section class="py-16">
+            <div class="container mx-auto px-4">
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Banner 1 -->
+                    <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-8 text-center text-white">
+                        <i class="fas fa-book text-4xl mb-4"></i>
+                        <h3 class="text-xl font-bold mb-2">EN QUÉ CREEMOS</h3>
+                        <p class="text-blue-100 mb-4">Conoce las 28 creencias fundamentales de la Iglesia Adventista</p>
+                        <a href="#" class="inline-block bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">Descubre</a>
+                    </div>
+
+                    <!-- Banner 2 -->
+                    <div class="bg-gradient-to-r from-green-600 to-green-800 rounded-xl p-8 text-center text-white">
+                        <i class="fas fa-graduation-cap text-4xl mb-4"></i>
+                        <h3 class="text-xl font-bold mb-2">LECCIÓN 4</h3>
+                        <p class="text-green-100 mb-4">Estudia la lección de Escuela Sabática de esta semana</p>
+                        <a href="#" class="inline-block bg-white text-green-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">Estudiar</a>
+                    </div>
+
+                    <!-- Banner 3 -->
+                    <div class="bg-gradient-to-r from-orange-600 to-orange-800 rounded-xl p-8 text-center text-white">
+                        <i class="fas fa-praying-hands text-4xl mb-4"></i>
+                        <h3 class="text-xl font-bold mb-2">PODEMOS ORAR</h3>
+                        <p class="text-orange-100 mb-4">Comparte tu pedido de oración con nosotros</p>
+                        <a href="#" class="inline-block bg-white text-orange-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">Orar</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-blue-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-church text-blue-900 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold">Iglesia Adventista del Séptimo Día</h3>
+                <p class="text-blue-200">División Sudamericana</p>
+            </div>
+            
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <h4 class="font-semibold mb-4">Ministerios</h4>
+                    <ul class="space-y-2 text-blue-200 text-sm">
+                        <li><a href="#" class="hover:text-white">Escuela Sabática</a></li>
+                        <li><a href="#" class="hover:text-white">Ministerio Joven</a></li>
+                        <li><a href="#" class="hover:text-white">Ministerio Infantil</a></li>
+                        <li><a href="#" class="hover:text-white">Ministerio de la Familia</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Recursos</h4>
+                    <ul class="space-y-2 text-blue-200 text-sm">
+                        <li><a href="#" class="hover:text-white">Downloads</a></li>
+                        <li><a href="#" class="hover:text-white">Videos</a></li>
+                        <li><a href="#" class="hover:text-white">7Class</a></li>
+                        <li><a href="#" class="hover:text-white">Feliz7Play</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Institucional</h4>
+                    <ul class="space-y-2 text-blue-200 text-sm">
+                        <li><a href="#" class="hover:text-white">Sobre Nosotros</a></li>
+                        <li><a href="#" class="hover:text-white">Creencias</a></li>
+                        <li><a href="#" class="hover:text-white">Historia</a></li>
+                        <li><a href="#" class="hover:text-white">Contacto</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Síguenos</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-blue-200 hover:text-white text-xl"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-blue-200 hover:text-white text-xl"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-blue-200 hover:text-white text-xl"><i class="fab fa-youtube"></i></a>
+                        <a href="#" class="text-blue-200 hover:text-white text-xl"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-blue-800 pt-8 text-center text-blue-200 text-sm">
+                <p>&copy; 2025 Iglesia Adventista del Séptimo Día - División Sudamericana. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // Mobile menu toggle
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            if (mobileMenuToggle && mobileMenu) {
+                mobileMenuToggle.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('active');
+                });
+            }
+
+            // Carousel functionality (basic implementation)
+            // TODO: Implement full carousel functionality with auto-rotate and navigation
+            
+            // Smooth scroll for internal links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+
+            // Search functionality mock
+            const searchButtons = document.querySelectorAll('button[type="submit"], .bg-blue-600');
+            searchButtons.forEach(button => {
+                if (button.textContent.includes('BÚSQUEDA')) {
+                    button.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        // TODO: Implement actual search functionality
+                        alert('Funcionalidad de búsqueda - Por implementar');
+                    });
+                }
+            });
+
+            // Form submission handling
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    // TODO: Implement form handling and validation
+                    console.log('Form submission intercepted - implement server-side handling');
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
