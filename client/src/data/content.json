@@ -1,0 +1,143 @@
+{
+  "featured": [
+    {
+      "id": "probad-y-ved",
+      "title": "Probad y Ved",
+      "description": "Probad y Ved trae historias emocionantes e inspiradoras.",
+      "buttonText": "Accede",
+      "link": "https://adv.st/probadyved",
+      "gradient": "from-blue-50 to-blue-100",
+      "buttonColor": "bg-blue-600 hover:bg-blue-700"
+    },
+    {
+      "id": "escuela-sabatica",
+      "title": "ESCUELA SABÁTICA",
+      "description": "Los materiales del 4º Trimestre 2025 ya están disponibles para descargar.",
+      "buttonText": "¡Accede a los contenidos!",
+      "link": "https://downloads.adventistas.org/es/departamento/escuela-sabatica/",
+      "gradient": "from-green-50 to-green-100",
+      "buttonColor": "bg-green-600 hover:bg-green-700"
+    },
+    {
+      "id": "semana-esperanza",
+      "title": "Semana de la Esperanza 2025",
+      "description": "Únete a esta semana especial de evangelización y esperanza.",
+      "buttonText": "ACCEDE",
+      "link": "https://www.adventistas.org/es/evangelismo/proyecto/semana-de-la-esperanza-2025/",
+      "gradient": "from-orange-50 to-orange-100",
+      "buttonColor": "bg-orange-600 hover:bg-orange-700"
+    },
+    {
+      "id": "7class",
+      "title": "7Class",
+      "description": "7Class es una plataforma de videoclases enfocada en la educación cristiana y el desarrollo personal. ¡Ya está disponible con cursos activos!",
+      "buttonText": "Conoce",
+      "link": "https://www.adventistas.org/es/7class/",
+      "gradient": "from-purple-50 to-purple-100",
+      "buttonColor": "bg-purple-600 hover:bg-purple-700"
+    }
+  ],
+  "news": [
+    {
+      "id": "adra-peru-60",
+      "title": "ADRA Perú cumple 60 años llevando ayuda humanitaria y esperanza en el país",
+      "category": "Proyectos Sociales",
+      "description": "Con acciones de voluntariado, la agencia humanitaria en Perú, reafirmó su legado de servicio con justicia, compasión y amor.",
+      "link": "https://noticias.adventistas.org/es/adra-peru-cumple-60-anos-llevando-ayuda-humanitaria-y-esperanza-en-el-pais/",
+      "categoryColor": "text-blue-600"
+    },
+    {
+      "id": "hermanos-rivales",
+      "title": "¿Hermanos o rivales?",
+      "category": "Comportamiento",
+      "description": "La relación entre hermanos es uno de los lazos más duraderos y constantes, por eso vale la pena construirla con respeto y cuidado.",
+      "link": "https://noticias.adventistas.org/es/hermanos-o-rivales/",
+      "categoryColor": "text-green-600"
+    }
+  ],
+  "videos": [
+    {
+      "id": "leccion-3-trim-2023",
+      "title": "Lección Escuela Sabática (3º trim. 2023)",
+      "link": "https://videos.adventistas.org/es/editoria/biblia/leccion-escuela-sabatica-3o-trim-2023/"
+    },
+    {
+      "id": "encuentros-jesus",
+      "title": "Encuentros con Jesús | Escuela Sabática Viva",
+      "duration": "04:02",
+      "link": "https://videos.adventistas.org/es/editoria/biblia/encuentros-con-jesus-escuela-sabatica-viva/"
+    },
+    {
+      "id": "leccion-1-trim-2023",
+      "title": "Lección Escuela Sabática (1º trim. 2023)",
+      "link": "https://videos.adventistas.org/es/editoria/biblia/leccion-escuela-sabatica-1o-trim-2023/"
+    }
+  ],
+  "health": [
+    {
+      "id": "esperanza-vida-plena",
+      "title": "Esperanza: clave para vivir una vida plena y significativa",
+      "category": "Salud Mental",
+      "link": "https://quierovidaysalud.com/esperanza-vida-con-sentido/",
+      "categoryColor": "text-blue-600"
+    },
+    {
+      "id": "dieta-vegetariana-hierro",
+      "title": "Dieta vegetariana rica en hierro: cómo prevenir la anemia naturalmente",
+      "category": "Salud Física",
+      "link": "https://quierovidaysalud.com/dieta-vegetariana-rica/",
+      "categoryColor": "text-green-600"
+    },
+    {
+      "id": "controlar-ira",
+      "title": "Cómo controlar la ira: guía práctica para manejar este sentimiento",
+      "category": "Salud Mental",
+      "link": "https://quierovidaysalud.com/como-controlar-la-ira/",
+      "categoryColor": "text-orange-600"
+    }
+  ],
+  "courses": [
+    {
+      "id": "liderazgo-infantil",
+      "title": "Nível 8 Curso de Liderazgo del Ministerio Infantil",
+      "link": "https://www.7class.es/showcase"
+    },
+    {
+      "id": "inmunidad-aumento",
+      "title": "Inmunidad en Aumento",
+      "link": "https://www.7class.es/showcase"
+    },
+    {
+      "id": "adoracion-familia",
+      "title": "Adoración en Familia",
+      "link": "https://www.7class.es/showcase"
+    },
+    {
+      "id": "parejas-misioneras",
+      "title": "Parejas Misioneras",
+      "link": "https://www.7class.es/showcase"
+    }
+  ],
+  "downloads": [
+    {
+      "id": "espiritu-profecia-2025",
+      "title": "Día del Espíritu de Profecía 2025",
+      "link": "https://downloads.adventistas.org/es/ministerio-de-publicaciones/sermon/dia-del-espiritu-de-profecia-2025/"
+    },
+    {
+      "id": "semana-santa-2026",
+      "title": "Semana Santa 2026",
+      "link": "https://downloads.adventistas.org/es/ministerio-personal/psd-jpeg-pdf/semana-santa-2026/"
+    },
+    {
+      "id": "mision-caleb-2026",
+      "title": "Misión Caleb 2026 | Materiales",
+      "link": "https://downloads.adventistas.org/es/ministerio-joven/materiales-de-divulgacion/mision-caleb-2026-materiales/"
+    },
+    {
+      "id": "llave-maestra-cuna",
+      "title": "LLAVE MAESTRA CUNA - INFANTES - PRIMARIOS | 4° TRIMESTRE 2025",
+      "link": "https://downloads.adventistas.org/es/ministerio-del-nino/manuales-y-guias/llave-maestra-cuna-infantes-primarios-4-trimestre-2025/"
+    }
+  ]
+}
