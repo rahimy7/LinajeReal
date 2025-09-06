@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Instagram, Facebook, Youtube } from "lucide-react";
 
 export default function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -12,42 +13,56 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <section className="hero-gradient relative overflow-hidden min-h-[600px] flex items-center">
-      {/* Background overlay */}
+    <section className="relative overflow-hidden min-h-[600px] flex items-center bg-gradient-to-br from-blue-900 via-blue-800 to-orange-500">
+      {/* Background city image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center opacity-30"
+        className="absolute inset-0 bg-cover bg-center opacity-40"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')`
+          backgroundImage: `url('https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')`
         }}
       />
-      
-      {/* Figure with raised arms */}
-      <div className="absolute right-10 top-10 z-10 opacity-80 hidden md:block">
-        <img 
-          src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=600" 
-          alt="Person with raised arms in worship" 
-          className="w-64 h-96 object-cover rounded-lg shadow-2xl"
-          data-testid="hero-worship-image"
-        />
-      </div>
 
       <div className="container mx-auto px-4 relative z-20">
-        <div className="max-w-2xl">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
-            Semana de la<br />
-            Esperanza 2025
-          </h2>
-          <div className="text-4xl md:text-5xl lg:text-7xl font-black text-adventist-orange-600 mb-8 leading-none">
-            LA<br />
-            VERDAD<br />
-            REVELA
+        <div className="flex items-center justify-between">
+          {/* Social Media Icons */}
+          <div className="flex flex-col space-y-4 mr-8">
+            <a 
+              href="#" 
+              className="w-12 h-12 bg-black bg-opacity-70 rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all"
+              data-testid="social-instagram-hero"
+            >
+              <Instagram className="w-6 h-6" />
+            </a>
+            <a 
+              href="#" 
+              className="w-12 h-12 bg-black bg-opacity-70 rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all"
+              data-testid="social-facebook-hero"
+            >
+              <Facebook className="w-6 h-6" />
+            </a>
+            <a 
+              href="#" 
+              className="w-12 h-12 bg-black bg-opacity-70 rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all"
+              data-testid="social-youtube-hero"
+            >
+              <Youtube className="w-6 h-6" />
+            </a>
           </div>
-          <button 
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors duration-200"
-            data-testid="button-hero-accede"
-          >
-            ACCEDE
-          </button>
+
+          {/* YouTube Video Player */}
+          <div className="flex-1 max-w-4xl">
+            <div className="relative w-full h-0 pb-[56.25%] rounded-lg overflow-hidden shadow-2xl">
+              <iframe
+                className="absolute top-0 left-0 w-full h-full"
+                src="https://www.youtube.com/embed/HyoKx3hDnKQ?autoplay=1&mute=1&controls=1&rel=0"
+                title="Miami Central Spanish SDA"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                data-testid="youtube-player"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
