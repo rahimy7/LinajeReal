@@ -93,13 +93,13 @@ export default function Header() {
                   <ChevronDown className="w-4 h-4" />
                 </button>
               </div>
-              <a 
+             {/*  <a 
                 href="https://www.feliz7play.com/" 
                 className="text-gray-700 hover:text-blue-600"
                 data-testid="nav-feliz7play"
               >
                 feliz7play.com
-              </a>
+              </a> */}
             </div>
 
             {/* Mobile Menu Button */}

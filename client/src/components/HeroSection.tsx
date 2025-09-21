@@ -25,29 +25,36 @@ export default function HeroSection() {
       <div className="container mx-auto px-4 relative z-20">
         <div className="flex items-center justify-between">
           {/* Social Media Icons */}
-          <div className="flex flex-col space-y-4 mr-8">
-            <a 
-              href="#" 
-              className="w-12 h-12 bg-black bg-opacity-70 rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all"
-              data-testid="social-instagram-hero"
-            >
-              <Instagram className="w-6 h-6" />
-            </a>
-            <a 
-              href="#" 
-              className="w-12 h-12 bg-black bg-opacity-70 rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all"
-              data-testid="social-facebook-hero"
-            >
-              <Facebook className="w-6 h-6" />
-            </a>
-            <a 
-              href="#" 
-              className="w-12 h-12 bg-black bg-opacity-70 rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all"
-              data-testid="social-youtube-hero"
-            >
-              <Youtube className="w-6 h-6" />
-            </a>
-          </div>
+        <div className="flex flex-col space-y-4 mr-8">
+  <a 
+    href="https://www.instagram.com/iasdlinajereal" 
+    target="_blank"
+    rel="noopener noreferrer"
+    className="w-12 h-12 bg-black bg-opacity-70 rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all"
+    data-testid="social-instagram-hero"
+  >
+    <Instagram className="w-6 h-6" />
+  </a>
+  <a 
+    href="https://www.facebook.com/IASDLinajeReal" 
+    target="_blank"
+    rel="noopener noreferrer"
+    className="w-12 h-12 bg-black bg-opacity-70 rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all"
+    data-testid="social-facebook-hero"
+  >
+    <Facebook className="w-6 h-6" />
+  </a>
+  <a 
+    href="https://www.youtube.com/@IASDLinajeReal" 
+    target="_blank"
+    rel="noopener noreferrer"
+    className="w-12 h-12 bg-black bg-opacity-70 rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all"
+    data-testid="social-youtube-hero"
+  >
+    <Youtube className="w-6 h-6" />
+  </a>
+</div>
+
 
           {/* YouTube Video Player - Centrado pero más a la izquierda */}
           <div className="flex-1 max-w-3xl ml-8">

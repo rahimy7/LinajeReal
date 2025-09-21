@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Clock, BookOpen, FileText, Type, Zap, MapPin, Users, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Filter, X, Eye, EyeOff } from 'lucide-react';
+
+// Importar el widget flotante del maratón que ya tenemos
+import MarathonFloatingWidget from '../components/MarathonFloatingWidget';
 
 // ==================== DATA ====================
 const bibleData = {
@@ -87,25 +90,25 @@ const bibleData = {
   }
 };
 
-// Función para generar datos mock de lectura
-function generateMockReadingData(preferredBooks, totalChapters) {
-  const result = {};
+// ==================== UTILITIES ====================
+const generateMockReadingData = (preferredBooks: string[], totalChapters: number) => {
+  const result: { [key: string]: number[] } = {};
   let chaptersAssigned = 0;
   
   for (const bookKey of preferredBooks) {
-    if (!bibleData[bookKey]) continue;
+    if (!bibleData[bookKey as keyof typeof bibleData]) continue;
     
-    const maxChapters = bibleData[bookKey].chapters;
+    const maxChapters = bibleData[bookKey as keyof typeof bibleData].chapters;
     const chaptersToAssign = Math.min(
       Math.floor(totalChapters / preferredBooks.length) + Math.floor(Math.random() * 10),
       maxChapters
     );
     
     result[bookKey] = [];
-    const usedChapters = new Set();
+    const usedChapters = new Set<number>();
     
     for (let i = 0; i < chaptersToAssign && chaptersAssigned < totalChapters; i++) {
-      let chapter;
+      let chapter: number;
       do {
         chapter = Math.floor(Math.random() * maxChapters) + 1;
       } while (usedChapters.has(chapter));
@@ -119,7 +122,7 @@ function generateMockReadingData(preferredBooks, totalChapters) {
   }
   
   return result;
-}
+};
 
 const initialReadingProgress = {
   juan: generateMockReadingData(['genesis', 'exodo', 'salmos', 'mateo', 'juan', 'romanos', 'hebreos'], 325),
@@ -145,189 +148,13 @@ const readerColors = {
 
 // ==================== COMPONENTS ====================
 
-// Marathon Panel Component
-const MarathonPanel = ({ readingProgress, currentBook, currentChapter }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [timer, setTimer] = useState('');
-  const [marathonStats, setMarathonStats] = useState({
-    completedChapters: 0,
-    completedVerses: 0,
-    completedWords: 0,
-    readingSpeed: 0,
-    percentage: 0
-  });
+interface BookPageProps {
+  side: 'left' | 'right';
+  content: React.ReactNode;
+  pageNumber: number;
+}
 
-  useEffect(() => {
-    const updateTimer = () => {
-      const startTime = new Date('2024-01-01T00:00:00');
-      const endTime = new Date(startTime);
-      endTime.setHours(endTime.getHours() + 70);
-      
-      const now = new Date();
-      const diff = endTime - now;
-      
-      if (diff > 0) {
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        
-        let timerText = '';
-        if (days > 0) timerText += `${days}D `;
-        timerText += `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        
-        setTimer(timerText);
-      } else {
-        setTimer('COMPLETADO');
-      }
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const allReadChapters = new Set();
-    
-    for (const [reader, books] of Object.entries(readingProgress)) {
-      for (const [book, chapters] of Object.entries(books)) {
-        chapters.forEach(chapter => {
-          allReadChapters.add(`${book}-${chapter}`);
-        });
-      }
-    }
-    
-    const totalChapters = 1189;
-    const totalVerses = 31102;
-    const totalWords = 783137;
-    
-    const completedChapters = allReadChapters.size;
-    const percentage = (completedChapters / totalChapters) * 100;
-    
-    setMarathonStats({
-      completedChapters,
-      completedVerses: Math.floor(totalVerses * (percentage / 100)),
-      completedWords: Math.floor(totalWords * (percentage / 100)),
-      readingSpeed: Math.floor(Math.random() * 1000 + 500),
-      percentage
-    });
-  }, [readingProgress]);
-
-  const circumference = 2 * Math.PI * 65;
-  const strokeDashoffset = circumference - (marathonStats.percentage / 100) * circumference;
-
-  return (
-    <div className={`fixed right-5 top-1/2 -translate-y-1/2 w-80 bg-gradient-to-br from-stone-100 to-stone-200 rounded-2xl p-6 shadow-2xl border border-stone-300 z-50 transition-all duration-300 ${isCollapsed ? 'w-20 p-4' : ''}`}>
-      <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-16 bg-gradient-to-r from-amber-700 to-amber-600 rounded-l-2xl flex items-center justify-center text-white hover:from-amber-800 hover:to-amber-700 transition-colors"
-      >
-        {isCollapsed ? '▶' : '◀'}
-      </button>
-
-      {!isCollapsed && (
-        <div className="space-y-4">
-          <div className="text-center p-4 bg-white/50 rounded-xl">
-            <div className="text-xs text-gray-600 mb-1 flex items-center justify-center gap-1">
-              <Clock className="w-3 h-3" />
-              Tiempo restante
-            </div>
-            <div className="text-3xl font-bold text-amber-700 font-mono">{timer}</div>
-          </div>
-
-          <div className="text-center">
-            <h3 className="text-sm font-bold text-amber-800 mb-4">📊 PROGRESO DE ESCRITURA</h3>
-            
-            <div className="relative inline-block">
-              <svg width="150" height="150">
-                <defs>
-                  <linearGradient id="progress-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#c8852c" />
-                    <stop offset="100%" stopColor="#a06b20" />
-                  </linearGradient>
-                </defs>
-                <circle
-                  cx="75"
-                  cy="75"
-                  r="65"
-                  fill="none"
-                  stroke="#e5e7eb"
-                  strokeWidth="12"
-                />
-                <circle
-                  cx="75"
-                  cy="75"
-                  r="65"
-                  fill="none"
-                  stroke="url(#progress-gradient)"
-                  strokeWidth="12"
-                  strokeLinecap="round"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  transform="rotate(-90 75 75)"
-                  className="transition-all duration-1000"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-3xl font-bold text-amber-800">
-                  {Math.floor(marathonStats.percentage)}%
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-2 bg-white/70 rounded-lg">
-              <span className="flex items-center gap-2 text-sm text-stone-600">
-                <BookOpen className="w-4 h-4" /> Capítulos
-              </span>
-              <span className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-3 py-1 rounded-full text-xs font-bold">
-                {marathonStats.completedChapters}/1189
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-2 bg-white/70 rounded-lg">
-              <span className="flex items-center gap-2 text-sm text-stone-600">
-                <FileText className="w-4 h-4" /> Versículos
-              </span>
-              <span className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-3 py-1 rounded-full text-xs font-bold">
-                {marathonStats.completedVerses}/31102
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-2 bg-white/70 rounded-lg">
-              <span className="flex items-center gap-2 text-sm text-stone-600">
-                <Type className="w-4 h-4" /> Palabras
-              </span>
-              <span className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-3 py-1 rounded-full text-xs font-bold">
-                {marathonStats.completedWords}/783137
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-2 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border border-orange-200">
-              <span className="flex items-center gap-2 text-sm text-stone-600">
-                <Zap className="w-4 h-4" /> Velocidad
-              </span>
-              <span className="text-amber-700 font-bold text-sm">
-                {marathonStats.readingSpeed} palabras/hora
-              </span>
-            </div>
-          </div>
-
-          <div className="p-3 bg-white/80 rounded-lg border-l-4 border-amber-600">
-            <div className="text-xs font-bold text-amber-800 mb-1 flex items-center gap-1">
-              <MapPin className="w-3 h-3" /> Estado Actual
-            </div>
-            <div className="text-xs text-stone-600">
-              Escribiendo {bibleData[currentBook]?.name || 'Génesis'}, Capítulo {currentChapter}...
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Book Page Component
-const BookPage = ({ side, content, pageNumber }) => {
+const BookPage: React.FC<BookPageProps> = ({ side, content, pageNumber }) => {
   const isLeft = side === 'left';
   
   return (
@@ -342,22 +169,37 @@ const BookPage = ({ side, content, pageNumber }) => {
   );
 };
 
-// Chapter Grid Component
-const ChapterGrid = ({ book, bookData, readingProgress, currentReader, currentChapter, onSelectChapter }) => {
-  const getReaderClass = (chapter) => {
+interface ChapterGridProps {
+  book: string;
+  bookData: { name: string; chapters: number };
+  readingProgress: typeof initialReadingProgress;
+  currentReader: string;
+  currentChapter: { book: string; chapter: number };
+  onSelectChapter: (book: string, chapter: number) => void;
+}
+
+const ChapterGrid: React.FC<ChapterGridProps> = ({ 
+  book, 
+  bookData, 
+  readingProgress, 
+  currentReader, 
+  currentChapter, 
+  onSelectChapter 
+}) => {
+  const getReaderClass = (chapter: number): string => {
     for (const [reader, books] of Object.entries(readingProgress)) {
       if (books[book] && books[book].includes(chapter)) {
         if (!currentReader || currentReader === reader) {
-          return readerColors[reader] || '';
+          return readerColors[reader as keyof typeof readerColors] || '';
         }
       }
     }
     return '';
   };
 
-  const isFiltered = (chapter) => {
+  const isFiltered = (chapter: number): boolean => {
     if (!currentReader) return false;
-    const readerData = readingProgress[currentReader];
+    const readerData = readingProgress[currentReader as keyof typeof readingProgress];
     if (!readerData || !readerData[book]) return true;
     return !readerData[book].includes(chapter);
   };
@@ -392,13 +234,115 @@ const ChapterGrid = ({ book, bookData, readingProgress, currentReader, currentCh
   );
 };
 
-// Main Bible App Component
+interface FilterPanelProps {
+  currentReader: string;
+  onReaderChange: (reader: string) => void;
+  stats: { totalRead: number; percentage: number };
+  totalChapters: number;
+  isVisible: boolean;
+  onToggle: () => void;
+}
+
+const FilterPanel: React.FC<FilterPanelProps> = ({
+  currentReader,
+  onReaderChange,
+  stats,
+  totalChapters,
+  isVisible,
+  onToggle
+}) => {
+  return (
+    <div className="mb-4">
+      {/* Toggle Button */}
+      <button
+        onClick={onToggle}
+        className="w-full bg-white/95 rounded-xl p-3 mb-2 flex items-center justify-between shadow-lg hover:shadow-xl transition-all"
+      >
+        <div className="flex items-center gap-3">
+          <Filter className="w-5 h-5 text-indigo-600" />
+          <span className="font-semibold text-gray-800">Filtros y Estadísticas</span>
+          <div className="flex gap-2">
+            <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs font-medium">
+              {stats.totalRead}/{totalChapters}
+            </span>
+            <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">
+              {stats.percentage}%
+            </span>
+          </div>
+        </div>
+        {isVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+      </button>
+
+      {/* Expandable Content */}
+      {isVisible && (
+        <div className="bg-white/95 rounded-xl p-4 shadow-xl space-y-4 animate-in slide-in-from-top duration-300">
+          {/* Reader Filter */}
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="font-semibold text-gray-700">Filtrar por lector:</label>
+            <select 
+              value={currentReader}
+              onChange={(e) => onReaderChange(e.target.value)}
+              className="px-4 py-2 rounded-lg border-2 border-indigo-300 text-sm bg-white cursor-pointer focus:border-indigo-500 focus:outline-none"
+            >
+              <option value="">Todos los capítulos</option>
+              <option value="juan">Juan (325 capítulos)</option>
+              <option value="maria">María (280 capítulos)</option>
+              <option value="pedro">Pedro (215 capítulos)</option>
+              <option value="ana">Ana (190 capítulos)</option>
+              <option value="pablo">Pablo (175 capítulos)</option>
+              <option value="lucas">Lucas (150 capítulos)</option>
+              <option value="marcos">Marcos (125 capítulos)</option>
+              <option value="sara">Sara (95 capítulos)</option>
+            </select>
+          </div>
+
+          {/* Statistics */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
+              <div className="text-blue-800 text-xs font-medium">Total Leído</div>
+              <div className="text-blue-900 text-lg font-bold">{stats.totalRead}</div>
+            </div>
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200">
+              <div className="text-purple-800 text-xs font-medium">Total Capítulos</div>
+              <div className="text-purple-900 text-lg font-bold">{totalChapters}</div>
+            </div>
+            <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-lg border border-green-200">
+              <div className="text-green-800 text-xs font-medium">Completado</div>
+              <div className="text-green-900 text-lg font-bold">{stats.percentage}%</div>
+            </div>
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-3 rounded-lg border border-amber-200">
+              <div className="text-amber-800 text-xs font-medium">Restante</div>
+              <div className="text-amber-900 text-lg font-bold">{totalChapters - stats.totalRead}</div>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <div className="text-sm font-medium text-gray-700 mb-2">Leyenda de lectores:</div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(readerColors).map(([reader, colors]) => (
+                <div key={reader} className="flex items-center gap-2">
+                  <div className={`w-4 h-4 rounded border-2 ${colors}`} />
+                  <span className="text-xs capitalize text-gray-600">{reader}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ==================== MAIN COMPONENT ====================
 export default function BibleApp() {
   const [currentBook, setCurrentBook] = useState('genesis');
   const [currentChapter, setCurrentChapter] = useState(1);
   const [currentReader, setCurrentReader] = useState('');
-  const [readingProgress, setReadingProgress] = useState(initialReadingProgress);
+  const [readingProgress] = useState(initialReadingProgress);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [showFilters, setShowFilters] = useState(false);
+  const [showChapterGrid, setShowChapterGrid] = useState(false);
 
   const bookKeys = Object.keys(bibleData);
   const currentBookIndex = bookKeys.indexOf(currentBook);
@@ -411,14 +355,14 @@ export default function BibleApp() {
     let totalRead = 0;
     
     if (currentReader) {
-      const readerData = readingProgress[currentReader];
+      const readerData = readingProgress[currentReader as keyof typeof readingProgress];
       if (readerData) {
         for (const chapters of Object.values(readerData)) {
           totalRead += chapters.length;
         }
       }
     } else {
-      const uniqueChapters = new Set();
+      const uniqueChapters = new Set<string>();
       for (const [reader, books] of Object.entries(readingProgress)) {
         for (const [book, chapters] of Object.entries(books)) {
           chapters.forEach(chapter => {
@@ -435,7 +379,7 @@ export default function BibleApp() {
     };
   }, [readingProgress, currentReader, totalChapters]);
 
-  const handleSelectChapter = useCallback((book, chapter) => {
+  const handleSelectChapter = useCallback((book: string, chapter: number) => {
     setCurrentBook(book);
     setCurrentChapter(chapter);
   }, []);
@@ -446,12 +390,12 @@ export default function BibleApp() {
     } else if (currentBookIndex > 0) {
       const prevBook = bookKeys[currentBookIndex - 1];
       setCurrentBook(prevBook);
-      setCurrentChapter(bibleData[prevBook].chapters);
+      setCurrentChapter(bibleData[prevBook as keyof typeof bibleData].chapters);
     }
   }, [currentChapter, currentBookIndex, bookKeys]);
 
   const handleNextChapter = useCallback(() => {
-    const maxChapters = bibleData[currentBook].chapters;
+    const maxChapters = bibleData[currentBook as keyof typeof bibleData].chapters;
     if (currentChapter < maxChapters) {
       setCurrentChapter(currentChapter + 1);
     } else if (currentBookIndex < bookKeys.length - 1) {
@@ -461,7 +405,7 @@ export default function BibleApp() {
     }
   }, [currentBook, currentChapter, currentBookIndex, bookKeys]);
 
-  const generateVerses = (chapter) => {
+  const generateVerses = (chapter: number): string[] => {
     const templates = [
       `Este es el comienzo del capítulo ${chapter}.`,
       "Y aconteció en aquellos días que se cumplieron las palabras.",
@@ -474,8 +418,8 @@ export default function BibleApp() {
   };
 
   const getChapterContent = () => {
-    const bookData = bibleData[currentBook];
-    const verses = bookData.verses[currentChapter] || generateVerses(currentChapter);
+    const bookData = bibleData[currentBook as keyof typeof bibleData];
+    const verses = bookData.verses[currentChapter as keyof typeof bookData.verses] || generateVerses(currentChapter);
     
     const midPoint = Math.ceil(verses.length / 2);
     const leftVerses = verses.slice(0, midPoint);
@@ -516,7 +460,7 @@ export default function BibleApp() {
 
   // Mouse move effect for 3D
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       const x = (e.clientX / window.innerWidth - 0.5) * 10;
       const y = (e.clientY / window.innerHeight - 0.5) * 10;
       setMousePosition({ x, y });
@@ -529,47 +473,21 @@ export default function BibleApp() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-purple-600 p-2 flex flex-col">
-      {/* Top Controls */}
-      <div className="bg-white/95 rounded-2xl p-3 mb-2 flex items-center justify-between gap-2 flex-wrap shadow-xl">
-        <div className="flex items-center gap-2">
-          <label className="font-bold text-stone-700 text-sm">Filtrar por lector:</label>
-          <select 
-            value={currentReader}
-            onChange={(e) => setCurrentReader(e.target.value)}
-            className="px-3 py-1 rounded-full border-2 border-indigo-500 text-sm bg-white cursor-pointer"
-          >
-            <option value="">Todos los capítulos</option>
-            <option value="juan">Juan (325 capítulos)</option>
-            <option value="maria">María (280 capítulos)</option>
-            <option value="pedro">Pedro (215 capítulos)</option>
-            <option value="ana">Ana (190 capítulos)</option>
-            <option value="pablo">Pablo (175 capítulos)</option>
-            <option value="lucas">Lucas (150 capítulos)</option>
-            <option value="marcos">Marcos (125 capítulos)</option>
-            <option value="sara">Sara (95 capítulos)</option>
-          </select>
-        </div>
-        <div className="flex gap-4 text-xs">
-          <div className="flex items-center gap-1">
-            <span>Total leído:</span>
-            <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-2 py-1 rounded-full font-bold">
-              {stats.totalRead}/{totalChapters}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span>Completado:</span>
-            <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-2 py-1 rounded-full font-bold">
-              {stats.percentage}%
-            </span>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400 p-4">
+      {/* Filter Panel */}
+      <FilterPanel
+        currentReader={currentReader}
+        onReaderChange={setCurrentReader}
+        stats={stats}
+        totalChapters={totalChapters}
+        isVisible={showFilters}
+        onToggle={() => setShowFilters(!showFilters)}
+      />
 
       {/* Bible Container */}
-      <div className="flex-1 flex items-center justify-center perspective-1000">
+      <div className="flex-1 flex items-center justify-center perspective-1000 mb-4">
         <div 
-          className="relative w-full max-w-6xl h-[60vh] max-h-[600px]"
+          className="relative w-full max-w-6xl h-[70vh] max-h-[700px]"
           style={{
             transform: `rotateY(${mousePosition.x}deg) rotateX(${-mousePosition.y}deg)`,
             transformStyle: 'preserve-3d',
@@ -586,14 +504,15 @@ export default function BibleApp() {
       </div>
 
       {/* Navigation Panel */}
-      <div className="bg-white/95 rounded-2xl p-4 mt-2 flex flex-col gap-3 shadow-xl">
-        <div className="flex gap-2 justify-center items-center flex-wrap">
+      <div className="bg-white/95 rounded-2xl p-4 shadow-xl space-y-4">
+        {/* Book Navigation */}
+        <div className="flex gap-3 justify-center items-center flex-wrap">
           <button
             onClick={handlePreviousChapter}
             disabled={currentBookIndex === 0 && currentChapter === 1}
-            className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full font-bold text-sm disabled:opacity-50 hover:shadow-lg transition-all flex items-center gap-1"
+            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold disabled:opacity-50 hover:shadow-lg transition-all flex items-center gap-2"
           >
-            <ChevronLeft className="w-4 h-4" /> Anterior
+            <ChevronLeft className="w-5 h-5" /> Anterior
           </button>
           
           <select 
@@ -602,7 +521,7 @@ export default function BibleApp() {
               setCurrentBook(e.target.value);
               setCurrentChapter(1);
             }}
-            className="px-3 py-2 rounded-full border-2 border-indigo-500 text-sm bg-white"
+            className="px-4 py-3 rounded-xl border-2 border-indigo-300 bg-white font-semibold focus:border-indigo-500 focus:outline-none"
           >
             <optgroup label="Antiguo Testamento">
               {Object.entries(bibleData)
@@ -622,44 +541,51 @@ export default function BibleApp() {
           
           <button
             onClick={handleNextChapter}
-            disabled={currentBookIndex === bookKeys.length - 1 && currentChapter === bibleData[currentBook].chapters}
-            className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full font-bold text-sm disabled:opacity-50 hover:shadow-lg transition-all flex items-center gap-1"
+            disabled={currentBookIndex === bookKeys.length - 1 && currentChapter === bibleData[currentBook as keyof typeof bibleData].chapters}
+            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold disabled:opacity-50 hover:shadow-lg transition-all flex items-center gap-2"
           >
-            Siguiente <ChevronRight className="w-4 h-4" />
+            Siguiente <ChevronRight className="w-5 h-5" />
           </button>
         </div>
         
-        {/* Books and Chapters Grid */}
-        <div className="flex gap-4 overflow-x-auto p-2 bg-white/50 rounded-xl">
-          {Object.entries(bibleData).map(([bookKey, bookData]) => (
-            <ChapterGrid
-              key={bookKey}
-              book={bookKey}
-              bookData={bookData}
-              readingProgress={readingProgress}
-              currentReader={currentReader}
-              currentChapter={{ book: currentBook, chapter: currentChapter }}
-              onSelectChapter={handleSelectChapter}
-            />
-          ))}
+        {/* Chapter Grid Toggle */}
+        <div className="text-center">
+          <button
+            onClick={() => setShowChapterGrid(!showChapterGrid)}
+            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition-colors"
+          >
+            {showChapterGrid ? 'Ocultar' : 'Mostrar'} Cuadrícula de Capítulos
+          </button>
         </div>
         
-        {/* Legend */}
-        <div className="flex gap-2 flex-wrap p-2 bg-white/30 rounded-xl text-xs">
-          {Object.entries(readerColors).map(([reader, colors]) => (
-            <div key={reader} className="flex items-center gap-1">
-              <div className={`w-4 h-4 rounded ${colors}`} />
-              <span className="capitalize">{reader}</span>
+        {/* Chapter Grid */}
+        {showChapterGrid && (
+          <div className="bg-white/50 rounded-xl p-4 overflow-x-auto">
+            <div className="flex gap-4">
+              {Object.entries(bibleData).map(([bookKey, bookData]) => (
+                <ChapterGrid
+                  key={bookKey}
+                  book={bookKey}
+                  bookData={bookData}
+                  readingProgress={readingProgress}
+                  currentReader={currentReader}
+                  currentChapter={{ book: currentBook, chapter: currentChapter }}
+                  onSelectChapter={handleSelectChapter}
+                />
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Marathon Panel */}
-      <MarathonPanel 
+      {/* Marathon Widget */}
+      <MarathonFloatingWidget
         readingProgress={readingProgress}
         currentBook={currentBook}
         currentChapter={currentChapter}
+        position="bottom-right"
+        theme="default"
+        youtubeVideoId="jfKfPfyJRdk"
       />
     </div>
   );
