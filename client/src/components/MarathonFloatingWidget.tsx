@@ -42,7 +42,7 @@ const MarathonFloatingWidget = ({
   // Timer del maratón
   useEffect(() => {
     const updateTimer = () => {
-      const startTime = new Date('2024-01-01T00:00:00');
+      const startTime = new Date('2025-09-20T00:00:00');
       const endTime = new Date(startTime);
       endTime.setHours(endTime.getHours() + 70);
       
