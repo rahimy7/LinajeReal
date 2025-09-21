@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, BookOpen, FileText, Type, Zap, MapPin, Users, X, Maximize2, Minimize2, TrendingUp } from 'lucide-react';
+import { Clock, BookOpen, FileText, MapPin, Users, X, Maximize2, Minimize2, TrendingUp, Play } from 'lucide-react';
 
 // Componente de Widget Flotante del Maratón
 const MarathonFloatingWidget = ({ 
@@ -7,12 +7,20 @@ const MarathonFloatingWidget = ({
   currentBook = 'genesis', 
   currentChapter = 1,
   position = 'bottom-right', // 'bottom-right', 'bottom-left', 'top-right', 'top-left'
-  theme = 'default' // 'default', 'dark', 'minimal'
+  theme = 'default', // 'default', 'dark', 'minimal'
+  youtubeVideoId = 'dQw4w9WgXcQ' // ID del video de YouTube
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(true);
+  // Estados del widget: 'minimized', 'compact', 'expanded', 'video'
+  const [widgetState, setWidgetState] = useState('minimized');
   const [timer, setTimer] = useState('');
-  const [marathonStats, setMarathonStats] = useState({
+  const [marathonStats, setMarathonStats] = useState<{
+    completedChapters: number;
+    completedVerses: number;
+    completedWords: number;
+    readingSpeed: number;
+    percentage: number;
+    activeReaders: string[];
+  }>({
     completedChapters: 0,
     completedVerses: 0,
     completedWords: 0,
@@ -20,11 +28,9 @@ const MarathonFloatingWidget = ({
     percentage: 0,
     activeReaders: []
   });
-  const [isDragging, setIsDragging] = useState(false);
-  const [widgetPosition, setWidgetPosition] = useState({ x: null, y: null });
 
   // Posiciones predefinidas
-  const positions = {
+  const positions: Record<string, string> = {
     'bottom-right': 'bottom-5 right-5',
     'bottom-left': 'bottom-5 left-5',
     'top-right': 'top-5 right-5',
@@ -32,7 +38,7 @@ const MarathonFloatingWidget = ({
   };
 
   // Datos de la Biblia (simplificado para el ejemplo)
-  const bibleData = {
+  const bibleData: Record<string, { name: string; chapters: number }> = {
     genesis: { name: "Génesis", chapters: 50 },
     exodo: { name: "Éxodo", chapters: 40 },
     salmos: { name: "Salmos", chapters: 150 },
@@ -49,7 +55,7 @@ const MarathonFloatingWidget = ({
       endTime.setHours(endTime.getHours() + 70);
       
       const now = new Date();
-      const diff = endTime - now;
+      const diff = endTime.getTime() - now.getTime();
       
       if (diff > 0) {
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -74,19 +80,25 @@ const MarathonFloatingWidget = ({
 
   // Calcular estadísticas
   useEffect(() => {
-    const allReadChapters = new Set();
-    const activeReaders = new Set();
+    const allReadChapters = new Set<string>();
+    const activeReaders = new Set<string>();
     
     for (const [reader, books] of Object.entries(readingProgress)) {
       let hasChapters = false;
-      for (const [book, chapters] of Object.entries(books)) {
-        if (chapters && chapters.length > 0) {
-          hasChapters = true;
-          chapters.forEach(chapter => {
-            allReadChapters.add(`${book}-${chapter}`);
-          });
+      
+      // Verificar que books es un objeto válido
+      if (books && typeof books === 'object' && !Array.isArray(books)) {
+        for (const [book, chapters] of Object.entries(books)) {
+          // Verificar que chapters es un array
+          if (Array.isArray(chapters) && chapters.length > 0) {
+            hasChapters = true;
+            chapters.forEach((chapter: number) => {
+              allReadChapters.add(`${book}-${chapter}`);
+            });
+          }
         }
       }
+      
       if (hasChapters) activeReaders.add(reader);
     }
     
@@ -108,133 +120,141 @@ const MarathonFloatingWidget = ({
   }, [readingProgress]);
 
   // SVG del círculo de progreso
-  const radius = isMinimized ? 28 : 65;
+  const radius = widgetState === 'minimized' ? 28 : widgetState === 'compact' ? 35 : 65;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (marathonStats.percentage / 100) * circumference;
 
-  // Manejar arrastre del widget (solo en vista compacta)
-  const handleDragStart = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-    const rect = e.currentTarget.getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
-    
-    const handleMouseMove = (e) => {
-      setWidgetPosition({
-        x: e.clientX - offsetX,
-        y: e.clientY - offsetY
-      });
-    };
-    
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
-
-  const positionStyle = widgetPosition.x !== null && widgetPosition.y !== null
-    ? { left: `${widgetPosition.x}px`, top: `${widgetPosition.y}px`, right: 'auto', bottom: 'auto' }
-    : {};
-
-  // Widget minimizado (solo círculo y capítulo)
+  // Widget minimizado (solo círculo y capítulo + miniatura de video)
   const MinimizedView = () => {
-    const handleClick = (e) => {
+    const handleCircleClick = (e: React.MouseEvent<HTMLDivElement>) => {
       e.stopPropagation();
-      setIsMinimized(false);
+      setWidgetState('compact');
+    };
+
+    const handleVideoClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      e.stopPropagation();
+      setWidgetState('video');
     };
 
     return (
-      <div 
-        className={`
-          relative bg-white rounded-full shadow-2xl p-2 cursor-pointer
-          transform transition-all duration-300 hover:scale-110
-        `}
-        onClick={handleClick}
-      >
-        {/* Anillo pulsante de atención */}
-        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 opacity-20 animate-ping" />
-        
-        {/* Círculo de progreso */}
-        <svg width="72" height="72" className="transform -rotate-90">
-          <circle
-            cx="36"
-            cy="36"
-            r={radius}
-            fill="none"
-            stroke="#e5e7eb"
-            strokeWidth="6"
-          />
-          <circle
-            cx="36"
-            cy="36"
-            r={radius}
-            fill="none"
-            stroke="url(#mini-gradient)"
-            strokeWidth="6"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            className="transition-all duration-1000"
-          />
-          <defs>
-            <linearGradient id="mini-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#f59e0b" />
-              <stop offset="100%" stopColor="#dc2626" />
-            </linearGradient>
-          </defs>
-        </svg>
-        
-        {/* Porcentaje en el centro */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-lg font-bold text-gray-800">
-            {Math.floor(marathonStats.percentage)}%
-          </span>
-          <span className="text-[8px] text-gray-600 font-medium">
-            Cap. {currentChapter}
-          </span>
+      <div className="flex flex-col items-center gap-2">
+        {/* Círculo de estadísticas */}
+        <div 
+          className={`
+            relative bg-white rounded-full shadow-2xl p-2 cursor-pointer
+            transform transition-all duration-300 hover:scale-110
+          `}
+          onClick={handleCircleClick}
+        >
+          {/* Círculo de progreso */}
+          <svg width="72" height="72" className="transform -rotate-90">
+            <circle
+              cx="36"
+              cy="36"
+              r={radius}
+              fill="none"
+              stroke="#e5e7eb"
+              strokeWidth="6"
+            />
+            <circle
+              cx="36"
+              cy="36"
+              r={radius}
+              fill="none"
+              stroke="url(#mini-gradient)"
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={strokeDashoffset}
+              className="transition-all duration-1000"
+            />
+            <defs>
+              <linearGradient id="mini-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#f59e0b" />
+                <stop offset="100%" stopColor="#dc2626" />
+              </linearGradient>
+            </defs>
+          </svg>
+          
+          {/* Porcentaje en el centro */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <span className="text-lg font-bold text-gray-800">
+              {Math.floor(marathonStats.percentage)}%
+            </span>
+            <span className="text-[8px] text-gray-600 font-medium">
+              Cap. {currentChapter}
+            </span>
+          </div>
+          
+          {/* Badge de notificación */}
+          {marathonStats.activeReaders.length > 0 && (
+            <div className="absolute -top-1 -right-1 bg-green-500 rounded-full w-3 h-3 animate-pulse" />
+          )}
         </div>
-        
-        {/* Badge de notificación */}
-        {marathonStats.activeReaders.length > 0 && (
-          <div className="absolute -top-1 -right-1 bg-green-500 rounded-full w-3 h-3 animate-pulse" />
-        )}
+
+        {/* Miniatura del video de YouTube con efecto de onda */}
+        <div className="relative">
+          {/* Ondas de efecto LIVE - múltiples capas */}
+          <div className="absolute inset-0 w-16 h-12">
+            <div className="absolute inset-0 bg-red-500 rounded-lg opacity-75 animate-ping"></div>
+            <div className="absolute inset-0 bg-red-400 rounded-lg opacity-50 animate-ping" style={{ animationDelay: '0.3s', animationDuration: '1.5s' }}></div>
+            <div className="absolute inset-0 bg-red-600 rounded-lg opacity-25 animate-ping" style={{ animationDelay: '0.6s', animationDuration: '2s' }}></div>
+          </div>
+          
+          {/* Contenedor del video */}
+          <div 
+            className="relative w-16 h-12 bg-black rounded-lg overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 shadow-lg z-10"
+            onClick={handleVideoClick}
+          >
+            {/* Thumbnail del video */}
+            <img 
+              src={`https://img.youtube.com/vi/${youtubeVideoId}/mqdefault.jpg`}
+              alt="Video thumbnail"
+              className="w-full h-full object-cover"
+            />
+            
+            {/* Overlay de play */}
+            <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+              <Play className="w-4 h-4 text-white fill-white" />
+            </div>
+            
+            {/* Indicador LIVE con texto */}
+            <div className="absolute bottom-1 left-1 right-1 bg-red-500 bg-opacity-90 rounded text-white text-[8px] font-bold text-center py-0.5">
+              LIVE
+            </div>
+          </div>
+        </div>
       </div>
     );
   };
 
   // Vista compacta (información resumida)
   const CompactView = () => (
-    <div 
-      className={`bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl p-4 w-64 border border-gray-200 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-      onMouseDown={handleDragStart}
-    >
+    <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl p-4 w-64 border border-gray-200">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3 pointer-events-none">
+      <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1">
           <TrendingUp className="w-4 h-4 text-amber-600" />
           Maratón Bíblico
         </h3>
-        <div className="flex gap-1 pointer-events-auto">
+        <div className="flex gap-1">
           <button
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
               e.stopPropagation();
-              setIsExpanded(true);
+              setWidgetState('expanded');
             }}
             className="p-1 hover:bg-gray-100 rounded transition-colors"
+            title="Expandir"
           >
             <Maximize2 className="w-3 h-3 text-gray-600" />
           </button>
           <button
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
               e.stopPropagation();
-              setIsMinimized(true);
+              setWidgetState('minimized');
             }}
             className="p-1 hover:bg-gray-100 rounded transition-colors"
+            title="Minimizar"
           >
             <Minimize2 className="w-3 h-3 text-gray-600" />
           </button>
@@ -242,7 +262,7 @@ const MarathonFloatingWidget = ({
       </div>
       
       {/* Círculo de progreso mediano */}
-      <div className="flex items-center gap-4 mb-3 pointer-events-none">
+      <div className="flex items-center gap-4 mb-3">
         <div className="relative">
           <svg width="80" height="80">
             <circle
@@ -294,7 +314,7 @@ const MarathonFloatingWidget = ({
       </div>
       
       {/* Barra de lectores activos */}
-      <div className="flex items-center gap-2 pointer-events-none">
+      <div className="flex items-center gap-2">
         <Users className="w-3 h-3 text-gray-500" />
         <div className="flex -space-x-2">
           {marathonStats.activeReaders.slice(0, 5).map((reader, i) => (
@@ -327,14 +347,16 @@ const MarathonFloatingWidget = ({
         </h3>
         <div className="flex gap-1">
           <button
-            onClick={() => setIsExpanded(false)}
+            onClick={() => setWidgetState('compact')}
             className="p-1.5 hover:bg-white/50 rounded transition-colors"
+            title="Vista compacta"
           >
             <Minimize2 className="w-4 h-4 text-gray-600" />
           </button>
           <button
-            onClick={() => setIsMinimized(true)}
+            onClick={() => setWidgetState('minimized')}
             className="p-1.5 hover:bg-white/50 rounded transition-colors"
+            title="Minimizar"
           >
             <X className="w-4 h-4 text-gray-600" />
           </button>
@@ -378,50 +400,37 @@ const MarathonFloatingWidget = ({
             <defs>
               <linearGradient id="full-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#c8852c" />
-                <stop offset="100%" stopColor="#a06b20" />
+                <stop offset="100%" stopColor="#dc2626" />
               </linearGradient>
             </defs>
           </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
+          
+          {/* Porcentaje central */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-3xl font-bold text-amber-800">
               {Math.floor(marathonStats.percentage)}%
             </span>
+            <span className="text-sm text-gray-600">completado</span>
           </div>
         </div>
       </div>
 
-      {/* Estadísticas */}
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center justify-between p-2 bg-white/70 rounded-lg hover:bg-white/90 transition-colors">
+      {/* Estadísticas simplificadas */}
+      <div className="space-y-3 mb-4">
+        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
           <span className="flex items-center gap-2 text-sm text-stone-600">
-            <BookOpen className="w-4 h-4" /> Capítulos
+            <BookOpen className="w-4 h-4" /> Libros Completados
           </span>
-          <span className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-3 py-1 rounded-full text-xs font-bold">
+          <span className="text-blue-700 font-bold">
+            12/66
+          </span>
+        </div>
+        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+          <span className="flex items-center gap-2 text-sm text-stone-600">
+            <FileText className="w-4 h-4" /> Capítulos Completados
+          </span>
+          <span className="text-green-700 font-bold">
             {marathonStats.completedChapters}/1189
-          </span>
-        </div>
-        <div className="flex items-center justify-between p-2 bg-white/70 rounded-lg hover:bg-white/90 transition-colors">
-          <span className="flex items-center gap-2 text-sm text-stone-600">
-            <FileText className="w-4 h-4" /> Versículos
-          </span>
-          <span className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-3 py-1 rounded-full text-xs font-bold">
-            {marathonStats.completedVerses}/31102
-          </span>
-        </div>
-        <div className="flex items-center justify-between p-2 bg-white/70 rounded-lg hover:bg-white/90 transition-colors">
-          <span className="flex items-center gap-2 text-sm text-stone-600">
-            <Type className="w-4 h-4" /> Palabras
-          </span>
-          <span className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-3 py-1 rounded-full text-xs font-bold">
-            {marathonStats.completedWords}/783137
-          </span>
-        </div>
-        <div className="flex items-center justify-between p-2 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border border-orange-200">
-          <span className="flex items-center gap-2 text-sm text-stone-600">
-            <Zap className="w-4 h-4" /> Velocidad
-          </span>
-          <span className="text-amber-700 font-bold text-sm">
-            {marathonStats.readingSpeed} p/hora
           </span>
         </div>
       </div>
@@ -455,18 +464,71 @@ const MarathonFloatingWidget = ({
     </div>
   );
 
+  // Vista de video expandida
+  const VideoView = () => (
+    <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl shadow-2xl overflow-hidden w-96 border border-gray-700">
+      {/* Header del video */}
+      <div className="flex items-center justify-between p-4 bg-black bg-opacity-50">
+        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+          <Play className="w-4 h-4 text-red-500" />
+          Maratón en Vivo
+        </h3>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setWidgetState('compact')}
+            className="p-1.5 hover:bg-white/20 rounded transition-colors"
+            title="Vista compacta"
+          >
+            <Minimize2 className="w-4 h-4 text-white" />
+          </button>
+          <button
+            onClick={() => setWidgetState('minimized')}
+            className="p-1.5 hover:bg-white/20 rounded transition-colors"
+            title="Minimizar"
+          >
+            <X className="w-4 h-4 text-white" />
+          </button>
+        </div>
+      </div>
+
+      {/* Reproductor de YouTube */}
+      <div className="relative aspect-video">
+        <iframe
+          src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&mute=1`}
+          title="YouTube video player"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="w-full h-full"
+        />
+      </div>
+
+      {/* Información adicional */}
+      <div className="p-4 bg-gradient-to-r from-gray-800 to-gray-900">
+        <div className="flex items-center justify-between text-sm">
+          <div className="text-gray-300">
+            <span className="text-red-500 font-bold">● LIVE</span> Maratón Bíblico
+          </div>
+          <div className="text-gray-400">
+            {marathonStats.activeReaders.length} participantes
+          </div>
+        </div>
+        
+        <div className="mt-2 text-xs text-gray-400">
+          Leyendo: {bibleData[currentBook]?.name || 'Génesis'}, Capítulo {currentChapter}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div 
-      className={`fixed z-50 transition-all duration-300 ${widgetPosition.x === null ? positions[position] : ''}`}
-      style={positionStyle}
+      className={`fixed z-50 transition-all duration-300 ${positions[position]}`}
     >
-      {isMinimized ? (
-        <MinimizedView />
-      ) : isExpanded ? (
-        <ExpandedView />
-      ) : (
-        <CompactView />
-      )}
+      {widgetState === 'minimized' && <MinimizedView />}
+      {widgetState === 'compact' && <CompactView />}
+      {widgetState === 'expanded' && <ExpandedView />}
+      {widgetState === 'video' && <VideoView />}
     </div>
   );
 };
@@ -498,12 +560,13 @@ export default function App() {
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-3">Configuración del Widget</h2>
           <p className="text-gray-600 mb-4">
-            El widget del maratón tiene tres estados:
+            El widget del maratón tiene cuatro estados:
           </p>
           <ul className="list-disc list-inside text-gray-600 space-y-2">
-            <li><strong>Minimizado:</strong> Solo muestra el círculo de progreso y capítulo actual</li>
+            <li><strong>Minimizado:</strong> Círculo de progreso + miniatura de video</li>
             <li><strong>Compacto:</strong> Vista resumida con información esencial</li>
             <li><strong>Expandido:</strong> Vista completa con todas las estadísticas</li>
+            <li><strong>Video:</strong> Reproductor de YouTube en vivo</li>
           </ul>
         </div>
       </div>
@@ -515,6 +578,7 @@ export default function App() {
         currentChapter={15}
         position="bottom-right"
         theme="default"
+        youtubeVideoId="miHMnB6PHDI" // Video de ejemplo - reemplaza con tu ID
       />
     </div>
   );

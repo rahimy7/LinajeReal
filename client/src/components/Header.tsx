@@ -7,7 +7,7 @@ export default function Header() {
   return (
     <header className="bg-white shadow-sm">
       {/* Top Bar */}
-      <div className="bg-gray-100 py-2">
+   {/*    <div className="bg-gray-100 py-2">
         <div className="container mx-auto px-4">
           <div className="flex justify-end space-x-4 text-sm text-gray-600">
             <a href="#" className="hover:text-blue-600" data-testid="link-institucional">INSTITUCIONAL</a>
@@ -25,7 +25,7 @@ export default function Header() {
             </a>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Main Navigation */}
       <nav className="bg-white border-b">
@@ -33,15 +33,13 @@ export default function Header() {
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-adventist-blue-800 rounded-full flex items-center justify-center">
-                <svg 
-                  className="w-6 h-6 text-white" 
-                  fill="currentColor" 
-                  viewBox="0 0 24 24"
-                  data-testid="logo-icon"
-                >
-                  <path d="M12 2L3 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-9-5z"/>
-                </svg>
+              <div className="w-12 h-12 flex items-center justify-center">
+                <img 
+                  src="/src/data/images/logo.jpg" 
+                  alt="Iglesia Adventista del 7mo Día - Central Linaje Real" 
+                  className="w-12 h-12 object-contain"
+                  data-testid="logo-image"
+                />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-gray-800">Iglesia Adventista del 7mo Dia</h1>
@@ -68,13 +66,14 @@ export default function Header() {
                 </button>
               </div>
               <div className="relative group">
-                <button 
+                <a 
+                  href="/biblia" 
                   className="text-gray-700 hover:text-blue-600 flex items-center space-x-1"
-                  data-testid="nav-sedes"
+                  data-testid="nav-maraton"
                 >
-                  <span>Sedes Regionales</span>
+                  <span>Maratón Bíblico</span>
                   <ChevronDown className="w-4 h-4" />
-                </button>
+                </a>
               </div>
               <div className="relative group">
                 <button 
@@ -88,9 +87,9 @@ export default function Header() {
               <div className="relative group">
                 <button 
                   className="text-gray-700 hover:text-blue-600 flex items-center space-x-1"
-                  data-testid="nav-prensa"
+                  data-testid="nav-construccion"
                 >
-                  <span>Prensa</span>
+                  <span>Proyecto de Construcción</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
               </div>
@@ -122,10 +121,9 @@ export default function Header() {
             <div className="space-y-4">
               <a href="#" className="block text-blue-600 font-semibold">Inicio</a>
               <a href="#" className="block text-gray-700">Departamentos</a>
-              <a href="#" className="block text-gray-700">Sedes Regionales</a>
+              <a href="/biblia" className="block text-gray-700">Maratón Bíblico</a>
               <a href="#" className="block text-gray-700">Sobre Nosotros</a>
-              <a href="#" className="block text-gray-700">Prensa</a>
-              <a href="#" className="block text-gray-700">feliz7play.com</a>
+              <a href="#" className="block text-gray-700">Proyecto de Construcción</a>
             </div>
           </div>
         </div>

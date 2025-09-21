@@ -49,8 +49,8 @@ export default function HeroSection() {
             </a>
           </div>
 
-          {/* YouTube Video Player */}
-          <div className="flex-1 max-w-4xl">
+          {/* YouTube Video Player - Centrado pero más a la izquierda */}
+          <div className="flex-1 max-w-3xl ml-8">
             <div className="relative w-full h-0 pb-[56.25%] rounded-lg overflow-hidden shadow-2xl">
               <iframe
                 className="absolute top-0 left-0 w-full h-full"
@@ -63,6 +63,9 @@ export default function HeroSection() {
               />
             </div>
           </div>
+
+          {/* Espacio vacío a la derecha para balancear */}
+          <div className="w-16"></div>
         </div>
       </div>
 
@@ -71,14 +74,19 @@ export default function HeroSection() {
         {Array.from({ length: totalSlides }).map((_, index) => (
           <button
             key={index}
-            className={`w-3 h-3 rounded-full transition-opacity ${
-              index === currentSlide ? 'bg-white opacity-100' : 'bg-white opacity-50'
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              index === currentSlide ? 'bg-white opacity-100 scale-125' : 'bg-white opacity-50 hover:opacity-75'
             }`}
             onClick={() => setCurrentSlide(index)}
             data-testid={`carousel-indicator-${index}`}
           />
         ))}
       </div>
+
+      {/* Decorative elements */}
+      <div className="absolute top-20 left-10 w-20 h-20 bg-white opacity-10 rounded-full blur-xl"></div>
+      <div className="absolute bottom-20 right-10 w-32 h-32 bg-orange-300 opacity-20 rounded-full blur-2xl"></div>
+      <div className="absolute top-1/3 right-20 w-16 h-16 bg-blue-300 opacity-15 rounded-full blur-lg"></div>
     </section>
   );
 }
