@@ -35,8 +35,8 @@ export default function Header() {
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 flex items-center justify-center">
                 <img 
-                  src="/src/data/images/logo.jpg" 
-                  alt="Iglesia Adventista del 7mo Día - Central Linaje Real" 
+                  src="/images/logo.jpg" 
+                 alt="Iglesia Adventista del 7mo Día - Central Linaje Real"
                   className="w-12 h-12 object-contain"
                   data-testid="logo-image"
                 />
