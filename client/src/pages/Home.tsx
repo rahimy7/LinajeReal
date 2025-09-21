@@ -9,8 +9,14 @@ import ClassSection from "@/components/ClassSection";
 import DownloadsSection from "@/components/DownloadsSection";
 import CallToAction from "@/components/CallToAction";
 import Footer from "@/components/Footer";
+import MarathonFloatingWidget from "@/components/MarathonFloatingWidget";
 
 export default function Home() {
+  const mockReadingProgress = {
+    juan: { genesis: [1, 2, 3, 5, 10], mateo: [1, 3, 5] },
+    maria: { salmos: [1, 23, 51], juan: [1, 2, 3] },
+    pedro: { exodo: [1, 2, 3], marcos: [1] }
+  };
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -70,6 +76,14 @@ export default function Home() {
         {/* <ClassSection /> */}
         <DownloadsSection />
         <CallToAction />
+
+        <MarathonFloatingWidget
+        readingProgress={mockReadingProgress}
+        currentBook="genesis"
+        currentChapter={15}
+        position="bottom-right"
+        theme="default"
+      />
       </main>
       <Footer />
     </div>

@@ -53,7 +53,7 @@ export default function HeroSection() {
           <div className="flex-1 max-w-4xl">
             <div className="relative w-full h-0 pb-[56.25%] rounded-lg overflow-hidden shadow-2xl">
               <iframe
-                className="absolute top-50 left-50 w-full h-full"
+                className="absolute top-0 left-0 w-full h-full"
                 src="https://www.youtube.com/embed/HyoKx3hDnKQ?autoplay=1&mute=1&controls=1&rel=0"
                 title="Miami Central Spanish SDA"
                 frameBorder="0"
