@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Filter, X, Eye, EyeOff, RefreshCw, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Filter, X, Eye, EyeOff, RefreshCw, AlertCircle, BookOpen } from 'lucide-react';
 
 // ==================== TYPES ====================
 interface Book {
@@ -41,8 +41,8 @@ interface Reader {
   name: string;
   email?: string;
   avatar_color: string;
-  chapters_read?: number;
-  verses_read?: number;
+  total_chapters_read: number;
+  total_verses_read: number;
   reading_speed_wpm: number;
   is_active: boolean;
 }
@@ -51,24 +51,39 @@ interface Stats {
   general: {
     total_books: number;
     total_readers: number;
+    active_readers: number;
     total_verses_read: number;
     total_chapters: number;
     total_verses: number;
+    completion_percentage: number;
   };
   readers: Reader[];
   books: any[];
 }
 
 interface ReadingProgress {
-  [readerId: number]: {
-    [bookKey: string]: number[];
-  };
+  reader_id: number;
+  reader_name: string;
+  verse_id: number;
+  book_name: string;
+  chapter_number: number;
+  verse_number: number;
+  is_read: boolean;
+  read_at?: string;
+  notes?: string;
+}
+
+interface LastReadChapter {
+  book_key: string;
+  book_name: string;
+  chapter_number: number;
+  last_read_at: string;
 }
 
 // ==================== API CONFIGURATION ====================
 const API_BASE = process.env.NODE_ENV === 'production' 
-  ? '/api/bible'  // Producción
-  : 'http://localhost:5000/api/bible';  // Desarrollo
+  ? '/api/bible'
+  : 'http://localhost:5000/api/bible';
 
 // ==================== API FUNCTIONS ====================
 const api = {
@@ -100,21 +115,52 @@ const api = {
     return data.data;
   },
 
-  async getReadingProgress(readerId?: number): Promise<any> {
-    const url = readerId 
-      ? `${API_BASE}/readers/${readerId}/progress`
-      : `${API_BASE}/progress`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Error al cargar progreso');
-    const data = await response.json();
-    return data.data;
+  async getLastReadChapter(): Promise<LastReadChapter | null> {
+    try {
+      const response = await fetch(`${API_BASE}/reports/last-read-chapter`);
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      console.warn('No se pudo obtener el último capítulo leído:', error);
+      return null;
+    }
   },
 
-  async markVerseAsRead(readerId: number, verseId: number): Promise<void> {
-    const response = await fetch(`${API_BASE}/readers/${readerId}/progress`, {
+  async getReadingProgressByChapter(bookKey: string, chapterNumber: number): Promise<ReadingProgress[]> {
+    try {
+      const response = await fetch(`${API_BASE}/progress/chapter/${bookKey}/${chapterNumber}`);
+      if (!response.ok) return [];
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      console.warn('Error al obtener progreso del capítulo:', error);
+      return [];
+    }
+  },
+
+  async getAllReadingProgress(): Promise<ReadingProgress[]> {
+    try {
+      const response = await fetch(`${API_BASE}/progress/all`);
+      if (!response.ok) return [];
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      console.warn('Error al obtener todo el progreso:', error);
+      return [];
+    }
+  },
+
+  async markVerseAsRead(readerId: number, verseId: number, notes?: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/progress`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ verse_id: verseId, is_read: true })
+      body: JSON.stringify({ 
+        reader_id: readerId, 
+        verse_id: verseId, 
+        is_read: true,
+        notes
+      })
     });
     if (!response.ok) throw new Error('Error al marcar versículo');
   },
@@ -128,56 +174,6 @@ const api = {
     const data = await response.json();
     return data.data;
   }
-};
-
-// ==================== UTILITY FUNCTIONS ====================
-const generateReadingProgressFromAPI = (readers: Reader[], books: Book[]): ReadingProgress => {
-  const progress: ReadingProgress = {};
-  
-  readers.forEach(reader => {
-    progress[reader.id] = {};
-    const chaptersToAssign = reader.chapters_read || Math.floor(Math.random() * 50) + 10;
-    let assigned = 0;
-    
-    books.forEach(book => {
-      if (assigned >= chaptersToAssign) return;
-      
-      const maxToAssign = Math.min(
-        Math.ceil(chaptersToAssign / books.length),
-        book.total_chapters
-      );
-      
-      const chapters: number[] = [];
-      for (let i = 1; i <= maxToAssign && assigned < chaptersToAssign; i++) {
-        if (Math.random() > 0.3) { // 70% probabilidad de estar leído
-          chapters.push(i);
-          assigned++;
-        }
-      }
-      
-      if (chapters.length > 0) {
-        progress[reader.id][book.key] = chapters;
-      }
-    });
-  });
-  
-  return progress;
-};
-
-const getReaderColor = (readerId: number): string => {
-  const colors = [
-    'bg-blue-200 border-blue-400',
-    'bg-purple-200 border-purple-400',
-    'bg-green-200 border-green-400',
-    'bg-yellow-200 border-yellow-400',
-    'bg-red-200 border-red-400',
-    'bg-teal-200 border-teal-400',
-    'bg-orange-200 border-orange-400',
-    'bg-pink-200 border-pink-400',
-    'bg-indigo-200 border-indigo-400',
-    'bg-cyan-200 border-cyan-400'
-  ];
-  return colors[readerId % colors.length];
 };
 
 // ==================== COMPONENTS ====================
@@ -205,7 +201,7 @@ const BookPage: React.FC<BookPageProps> = ({ side, content, pageNumber }) => {
 
 interface ChapterGridProps {
   book: Book;
-  readingProgress: ReadingProgress;
+  readingProgress: ReadingProgress[];
   currentReader: number | null;
   currentChapter: { book: string; chapter: number };
   onSelectChapter: (book: string, chapter: number) => void;
@@ -218,49 +214,105 @@ const ChapterGrid: React.FC<ChapterGridProps> = ({
   currentChapter, 
   onSelectChapter 
 }) => {
-  const getReaderClass = (chapter: number): string => {
-    for (const [readerId, books] of Object.entries(readingProgress)) {
-      if (books[book.key] && books[book.key].includes(chapter)) {
-        if (!currentReader || currentReader === parseInt(readerId)) {
-          return getReaderColor(parseInt(readerId));
-        }
-      }
-    }
-    return '';
+  const getChapterStatus = (chapter: number): 'read' | 'partial' | 'empty' => {
+    const chapterProgress = readingProgress.filter(
+      p => p.book_name === book.name && p.chapter_number === chapter
+    );
+    
+    if (chapterProgress.length === 0) return 'empty';
+    
+    const readVerses = chapterProgress.filter(p => p.is_read).length;
+    const totalVerses = chapterProgress.length;
+    
+    if (readVerses === totalVerses) return 'read';
+    if (readVerses > 0) return 'partial';
+    return 'empty';
   };
 
-  const isFiltered = (chapter: number): boolean => {
-    if (!currentReader) return false;
-    const readerData = readingProgress[currentReader];
-    if (!readerData || !readerData[book.key]) return true;
-    return !readerData[book.key].includes(chapter);
+  const getReaderForChapter = (chapter: number): Reader | null => {
+    if (!currentReader) return null;
+    
+    const chapterProgress = readingProgress.find(
+      p => p.book_name === book.name && 
+          p.chapter_number === chapter && 
+          p.reader_id === currentReader &&
+          p.is_read
+    );
+    
+    return chapterProgress ? { id: currentReader } as Reader : null;
+  };
+
+  const isChapterAvailable = (chapter: number): boolean => {
+    const chapterProgress = readingProgress.filter(
+      p => p.book_name === book.name && p.chapter_number === chapter && p.is_read
+    );
+    return chapterProgress.length > 0;
+  };
+
+  const getChapterClass = (chapter: number): string => {
+    const status = getChapterStatus(chapter);
+    const isCurrentChapter = book.key === currentChapter.book && chapter === currentChapter.chapter;
+    const isAvailable = isChapterAvailable(chapter);
+    
+    let baseClass = 'aspect-square flex items-center justify-center text-xs font-bold rounded cursor-pointer transition-all hover:scale-110';
+    
+    if (isCurrentChapter) {
+      baseClass += ' bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg';
+    } else if (!isAvailable) {
+      baseClass += ' bg-gray-200 text-gray-400 cursor-not-allowed opacity-50';
+    } else {
+      switch (status) {
+        case 'read':
+          baseClass += ' bg-green-200 border-2 border-green-400 text-green-800 hover:bg-green-300';
+          break;
+        case 'partial':
+          baseClass += ' bg-yellow-200 border-2 border-yellow-400 text-yellow-800 hover:bg-yellow-300';
+          break;
+        default:
+          baseClass += ' bg-white border-2 border-stone-300 hover:border-stone-400';
+      }
+    }
+    
+    return baseClass;
   };
 
   return (
     <div className="min-w-[150px]">
       <div 
         className={`font-bold text-amber-800 mb-2 p-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded text-center text-sm cursor-pointer hover:from-indigo-500 hover:to-purple-500 hover:text-white transition-all ${book.key === currentChapter.book ? 'from-indigo-500 to-purple-500 text-white' : ''}`}
-        onClick={() => onSelectChapter(book.key, 1)}
+        onClick={() => {
+          // Encontrar el primer capítulo leído del libro
+          const firstReadChapter = readingProgress.find(
+            p => p.book_name === book.name && p.is_read
+          )?.chapter_number || 1;
+          
+          if (isChapterAvailable(firstReadChapter)) {
+            onSelectChapter(book.key, firstReadChapter);
+          }
+        }}
       >
         {book.name}
       </div>
       <div className="grid grid-cols-5 gap-1">
-        {Array.from({ length: book.total_chapters }, (_, i) => i + 1).map(chapter => (
-          <button
-            key={chapter}
-            onClick={() => !isFiltered(chapter) && onSelectChapter(book.key, chapter)}
-            className={`
-              aspect-square flex items-center justify-center text-xs font-bold rounded cursor-pointer
-              transition-all hover:scale-110 hover:-translate-y-1 hover:shadow-lg
-              ${getReaderClass(chapter)}
-              ${book.key === currentChapter.book && chapter === currentChapter.chapter ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white' : ''}
-              ${isFiltered(chapter) ? 'opacity-20 cursor-not-allowed' : 'bg-white shadow border border-stone-300'}
-            `}
-            disabled={isFiltered(chapter)}
-          >
-            {chapter}
-          </button>
-        ))}
+        {Array.from({ length: book.total_chapters }, (_, i) => i + 1).map(chapter => {
+          const isAvailable = isChapterAvailable(chapter);
+          
+          return (
+            <button
+              key={chapter}
+              onClick={() => isAvailable && onSelectChapter(book.key, chapter)}
+              className={getChapterClass(chapter)}
+              disabled={!isAvailable}
+              title={
+                isAvailable 
+                  ? `Capítulo ${chapter} - Disponible` 
+                  : `Capítulo ${chapter} - No leído aún`
+              }
+            >
+              {chapter}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -275,6 +327,7 @@ interface FilterPanelProps {
   onToggle: () => void;
   onRefresh: () => void;
   loading: boolean;
+  lastReadChapter: LastReadChapter | null;
 }
 
 const FilterPanel: React.FC<FilterPanelProps> = ({
@@ -285,12 +338,14 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   isVisible,
   onToggle,
   onRefresh,
-  loading
+  loading,
+  lastReadChapter
 }) => {
   const currentReaderData = currentReader ? readers.find(r => r.id === currentReader) : null;
   const totalChapters = stats?.general.total_chapters || 0;
-  const totalRead = currentReaderData?.chapters_read || stats?.general.total_verses_read || 0;
-  const percentage = totalChapters > 0 ? Math.round((totalRead / totalChapters) * 100) : 0;
+  const totalRead = stats?.general.total_verses_read || 0;
+  const totalVerses = stats?.general.total_verses || 1;
+  const percentage = Math.round((totalRead / totalVerses) * 100);
 
   return (
     <div className="mb-4">
@@ -301,29 +356,28 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       >
         <div className="flex items-center gap-3">
           <Filter className="w-5 h-5 text-indigo-600" />
-          <span className="font-semibold text-gray-800">Filtros y Estadísticas</span>
+          <span className="font-semibold text-gray-800">Estado del Maratón</span>
           {stats && (
             <div className="flex gap-2">
               <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs font-medium">
-                {totalRead}/{totalChapters}
+                {totalRead.toLocaleString()} versículos
               </span>
               <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">
-                {percentage}%
+                {percentage}% completado
               </span>
             </div>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <div
             onClick={(e) => {
               e.stopPropagation();
               onRefresh();
             }}
-            disabled={loading}
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            className={`p-1 hover:bg-gray-100 rounded transition-colors cursor-pointer ${loading ? 'opacity-50' : ''}`}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+          </div>
           {isVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
         </div>
       </button>
@@ -331,6 +385,22 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       {/* Expandable Content */}
       {isVisible && (
         <div className="bg-white/95 rounded-xl p-4 shadow-xl space-y-4 animate-in slide-in-from-top duration-300">
+          {/* Last Read Chapter Info */}
+          {lastReadChapter && (
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-2">
+                <BookOpen className="w-4 h-4 text-blue-600" />
+                <span className="font-semibold text-blue-800">Último Capítulo Leído</span>
+              </div>
+              <p className="text-blue-700 text-sm">
+                {lastReadChapter.book_name} - Capítulo {lastReadChapter.chapter_number}
+              </p>
+              <p className="text-blue-600 text-xs">
+                Leído el {new Date(lastReadChapter.last_read_at).toLocaleDateString('es-ES')}
+              </p>
+            </div>
+          )}
+
           {/* Reader Filter */}
           <div className="flex flex-wrap items-center gap-3">
             <label className="font-semibold text-gray-700">Filtrar por lector:</label>
@@ -339,10 +409,10 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
               onChange={(e) => onReaderChange(e.target.value ? parseInt(e.target.value) : null)}
               className="px-4 py-2 rounded-lg border-2 border-indigo-300 text-sm bg-white cursor-pointer focus:border-indigo-500 focus:outline-none"
             >
-              <option value="">Todos los capítulos</option>
+              <option value="">Todos los capítulos leídos</option>
               {readers.map(reader => (
                 <option key={reader.id} value={reader.id}>
-                  {reader.name} ({reader.chapters_read || 0} capítulos)
+                  {reader.name} ({reader.total_chapters_read || 0} capítulos)
                 </option>
               ))}
             </select>
@@ -355,24 +425,24 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                 <div className="text-blue-800 text-xs font-medium">Libros</div>
                 <div className="text-blue-900 text-lg font-bold">{stats.general.total_books}</div>
               </div>
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200">
-                <div className="text-purple-800 text-xs font-medium">Lectores</div>
-                <div className="text-purple-900 text-lg font-bold">{stats.general.total_readers}</div>
-              </div>
               <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-lg border border-green-200">
-                <div className="text-green-800 text-xs font-medium">Versículos Leídos</div>
-                <div className="text-green-900 text-lg font-bold">{stats.general.total_verses_read}</div>
+                <div className="text-green-800 text-xs font-medium">Lectores Activos</div>
+                <div className="text-green-900 text-lg font-bold">{stats.general.active_readers}</div>
+              </div>
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200">
+                <div className="text-purple-800 text-xs font-medium">Versículos Leídos</div>
+                <div className="text-purple-900 text-lg font-bold">{stats.general.total_verses_read.toLocaleString()}</div>
               </div>
               <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-3 rounded-lg border border-amber-200">
-                <div className="text-amber-800 text-xs font-medium">Progreso</div>
-                <div className="text-amber-900 text-lg font-bold">{Math.round((stats.general.total_verses_read / stats.general.total_verses) * 100)}%</div>
+                <div className="text-amber-800 text-xs font-medium">Progreso Total</div>
+                <div className="text-amber-900 text-lg font-bold">{percentage}%</div>
               </div>
             </div>
           )}
 
-          {/* Legend */}
+          {/* Active Readers Legend */}
           <div className="bg-gray-50 p-3 rounded-lg">
-            <div className="text-sm font-medium text-gray-700 mb-2">Lectores activos:</div>
+            <div className="text-sm font-medium text-gray-700 mb-2">Lectores activos en el maratón:</div>
             <div className="flex flex-wrap gap-2">
               {readers.map(reader => (
                 <div key={reader.id} className="flex items-center gap-2">
@@ -380,9 +450,30 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                     className="w-4 h-4 rounded border-2"
                     style={{ backgroundColor: reader.avatar_color, borderColor: reader.avatar_color }}
                   />
-                  <span className="text-xs text-gray-600">{reader.name}</span>
+                  <span className="text-xs text-gray-600">
+                    {reader.name} ({reader.total_verses_read || 0} versículos)
+                  </span>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <div className="text-sm font-medium text-gray-700 mb-2">Leyenda de capítulos:</div>
+            <div className="flex flex-wrap gap-4 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-green-200 border-2 border-green-400 rounded" />
+                <span>Completamente leído</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-yellow-200 border-2 border-yellow-400 rounded" />
+                <span>Parcialmente leído</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-gray-200 border-2 border-gray-300 rounded" />
+                <span>No leído (no disponible)</span>
+              </div>
             </div>
           </div>
         </div>
@@ -392,12 +483,13 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 };
 
 // ==================== MAIN COMPONENT ====================
-export default function BibleApp() {
+export default function BibliaInteractiva() {
   // State management
   const [books, setBooks] = useState<Book[]>([]);
   const [readers, setReaders] = useState<Reader[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
-  const [readingProgress, setReadingProgress] = useState<ReadingProgress>({});
+  const [readingProgress, setReadingProgress] = useState<ReadingProgress[]>([]);
+  const [lastReadChapter, setLastReadChapter] = useState<LastReadChapter | null>(null);
   const [currentChapter, setCurrentChapter] = useState<ChapterData | null>(null);
   const [currentBook, setCurrentBook] = useState('');
   const [currentChapterNumber, setCurrentChapterNumber] = useState(1);
@@ -414,25 +506,28 @@ export default function BibleApp() {
     setError(null);
     
     try {
-      const [booksData, readersData, statsData] = await Promise.all([
+      const [booksData, readersData, statsData, progressData, lastChapterData] = await Promise.all([
         api.getBooks(),
         api.getReaders(),
-        api.getStats()
+        api.getStats(),
+        api.getAllReadingProgress(),
+        api.getLastReadChapter()
       ]);
       
       setBooks(booksData);
       setReaders(readersData);
       setStats(statsData);
+      setReadingProgress(progressData);
+      setLastReadChapter(lastChapterData);
       
-      // Generate reading progress from actual data
-      const progress = generateReadingProgressFromAPI(readersData, booksData);
-      setReadingProgress(progress);
-      
-      // Set initial book if not set
-      if (!currentBook && booksData.length > 0) {
-        const firstBook = booksData[0];
-        setCurrentBook(firstBook.key);
-        await loadChapter(firstBook.key, 1);
+      // Cargar el último capítulo leído si existe
+      if (lastChapterData && lastChapterData.book_key) {
+        await loadChapter(lastChapterData.book_key, lastChapterData.chapter_number);
+      } else {
+        // Si no hay progreso, mostrar página en blanco
+        setCurrentChapter(null);
+        setCurrentBook('');
+        setCurrentChapterNumber(1);
       }
       
     } catch (err) {
@@ -441,27 +536,41 @@ export default function BibleApp() {
     } finally {
       setLoading(false);
     }
-  }, [currentBook]);
+  }, []);
 
   // Load specific chapter
   const loadChapter = useCallback(async (bookKey: string, chapterNumber: number) => {
+    // Verificar si el capítulo está disponible (tiene progreso de lectura)
+    const chapterProgress = readingProgress.filter(
+      p => p.book_name === books.find(b => b.key === bookKey)?.name && 
+           p.chapter_number === chapterNumber && 
+           p.is_read
+    );
+    
+    if (chapterProgress.length === 0) {
+      // Capítulo no está leído, mostrar en blanco
+      setCurrentChapter(null);
+      setCurrentBook(bookKey);
+      setCurrentChapterNumber(chapterNumber);
+      return;
+    }
+    
     try {
       setLoading(true);
       const chapterData = await api.getChapter(bookKey, chapterNumber);
       setCurrentChapter(chapterData);
       setCurrentBook(bookKey);
       setCurrentChapterNumber(chapterNumber);
-      setError(null); // Clear any previous errors
+      setError(null);
     } catch (err) {
       console.error('Error loading chapter:', err);
-      // Don't set error, just show empty chapter
       setCurrentChapter(null);
       setCurrentBook(bookKey);
       setCurrentChapterNumber(chapterNumber);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [readingProgress, books]);
 
   // Initial load
   useEffect(() => {
@@ -475,35 +584,70 @@ export default function BibleApp() {
 
   // Navigation handlers
   const handlePreviousChapter = useCallback(async () => {
-    if (!currentChapter) return;
-    
-    if (currentChapterNumber > 1) {
-      await loadChapter(currentBook, currentChapterNumber - 1);
-    } else {
-      const currentBookIndex = books.findIndex(book => book.key === currentBook);
-      if (currentBookIndex > 0) {
-        const prevBook = books[currentBookIndex - 1];
-        await loadChapter(prevBook.key, prevBook.total_chapters);
-      }
-    }
-  }, [currentChapter, currentChapterNumber, currentBook, books, loadChapter]);
-
-  const handleNextChapter = useCallback(async () => {
-    if (!currentChapter) return;
-    
+    // Buscar el capítulo anterior que esté leído
+    const currentBookIndex = books.findIndex(book => book.key === currentBook);
     const currentBookData = books.find(book => book.key === currentBook);
+    
     if (!currentBookData) return;
     
-    if (currentChapterNumber < currentBookData.total_chapters) {
-      await loadChapter(currentBook, currentChapterNumber + 1);
-    } else {
-      const currentBookIndex = books.findIndex(book => book.key === currentBook);
-      if (currentBookIndex < books.length - 1) {
-        const nextBook = books[currentBookIndex + 1];
-        await loadChapter(nextBook.key, 1);
+    // Buscar en el libro actual
+    for (let chapter = currentChapterNumber - 1; chapter >= 1; chapter--) {
+      const hasProgress = readingProgress.some(
+        p => p.book_name === currentBookData.name && p.chapter_number === chapter && p.is_read
+      );
+      if (hasProgress) {
+        await loadChapter(currentBook, chapter);
+        return;
       }
     }
-  }, [currentChapter, currentChapterNumber, currentBook, books, loadChapter]);
+    
+    // Buscar en libros anteriores
+    for (let bookIndex = currentBookIndex - 1; bookIndex >= 0; bookIndex--) {
+      const book = books[bookIndex];
+      for (let chapter = book.total_chapters; chapter >= 1; chapter--) {
+        const hasProgress = readingProgress.some(
+          p => p.book_name === book.name && p.chapter_number === chapter && p.is_read
+        );
+        if (hasProgress) {
+          await loadChapter(book.key, chapter);
+          return;
+        }
+      }
+    }
+  }, [currentChapter, currentChapterNumber, currentBook, books, loadChapter, readingProgress]);
+
+  const handleNextChapter = useCallback(async () => {
+    // Buscar el siguiente capítulo que esté leído
+    const currentBookIndex = books.findIndex(book => book.key === currentBook);
+    const currentBookData = books.find(book => book.key === currentBook);
+    
+    if (!currentBookData) return;
+    
+    // Buscar en el libro actual
+    for (let chapter = currentChapterNumber + 1; chapter <= currentBookData.total_chapters; chapter++) {
+      const hasProgress = readingProgress.some(
+        p => p.book_name === currentBookData.name && p.chapter_number === chapter && p.is_read
+      );
+      if (hasProgress) {
+        await loadChapter(currentBook, chapter);
+        return;
+      }
+    }
+    
+    // Buscar en libros siguientes
+    for (let bookIndex = currentBookIndex + 1; bookIndex < books.length; bookIndex++) {
+      const book = books[bookIndex];
+      for (let chapter = 1; chapter <= book.total_chapters; chapter++) {
+        const hasProgress = readingProgress.some(
+          p => p.book_name === book.name && p.chapter_number === chapter && p.is_read
+        );
+        if (hasProgress) {
+          await loadChapter(book.key, chapter);
+          return;
+        }
+      }
+    }
+  }, [currentChapter, currentChapterNumber, currentBook, books, loadChapter, readingProgress]);
 
   // Mouse movement effect for 3D
   useEffect(() => {
@@ -522,11 +666,13 @@ export default function BibleApp() {
   // Generate content for current chapter
   const getChapterContent = () => {
     if (!currentChapter) {
-      // Show empty bible pages when chapter is not found
+      // Show empty bible pages when no chapter is available
+      const bookName = books.find(book => book.key === currentBook)?.name || 'Biblia Sagrada';
+      
       const emptyContent = (
         <>
           <h1 className="text-2xl font-bold text-amber-800 text-center mb-4 uppercase tracking-wider border-b-2 border-amber-700 pb-3">
-            {books.find(book => book.key === currentBook)?.name || 'Biblia'}
+            {bookName}
           </h1>
           <div className="text-lg font-bold text-amber-700 text-center mb-4">
             Capítulo {currentChapterNumber}
@@ -534,7 +680,10 @@ export default function BibleApp() {
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center text-amber-600/50">
               <div className="text-6xl mb-4">📖</div>
-              <p className="text-sm italic">Capítulo no disponible</p>
+              <p className="text-sm italic">Capítulo aún no leído en el maratón</p>
+              <p className="text-xs mt-2">
+                Este capítulo estará disponible cuando sea leído por la congregación
+              </p>
             </div>
           </div>
         </>
@@ -542,7 +691,12 @@ export default function BibleApp() {
       
       return {
         leftContent: emptyContent,
-        rightContent: <div></div>
+        rightContent: <div className="flex items-center justify-center h-full">
+          <div className="text-center text-amber-600/30">
+            <div className="text-4xl mb-2">✨</div>
+            <p className="text-xs italic">Esperando lectura...</p>
+          </div>
+        </div>
       };
     }
 
@@ -587,6 +741,68 @@ export default function BibleApp() {
 
   const { leftContent, rightContent } = getChapterContent();
 
+  // Get available books for dropdown (only books with read chapters)
+  const getAvailableBooks = useMemo(() => {
+    return books.filter(book => {
+      return readingProgress.some(p => p.book_name === book.name && p.is_read);
+    });
+  }, [books, readingProgress]);
+
+  // Check if navigation buttons should be enabled
+  const canNavigatePrevious = useMemo(() => {
+    if (readingProgress.length === 0) return false;
+    
+    // Find all read chapters before current
+    const currentBookIndex = books.findIndex(book => book.key === currentBook);
+    const currentBookData = books.find(book => book.key === currentBook);
+    
+    if (!currentBookData) return false;
+    
+    // Check previous chapters in current book
+    for (let chapter = currentChapterNumber - 1; chapter >= 1; chapter--) {
+      if (readingProgress.some(p => p.book_name === currentBookData.name && p.chapter_number === chapter && p.is_read)) {
+        return true;
+      }
+    }
+    
+    // Check previous books
+    for (let bookIndex = currentBookIndex - 1; bookIndex >= 0; bookIndex--) {
+      const book = books[bookIndex];
+      if (readingProgress.some(p => p.book_name === book.name && p.is_read)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }, [books, currentBook, currentChapterNumber, readingProgress]);
+
+  const canNavigateNext = useMemo(() => {
+    if (readingProgress.length === 0) return false;
+    
+    // Find all read chapters after current
+    const currentBookIndex = books.findIndex(book => book.key === currentBook);
+    const currentBookData = books.find(book => book.key === currentBook);
+    
+    if (!currentBookData) return false;
+    
+    // Check next chapters in current book
+    for (let chapter = currentChapterNumber + 1; chapter <= currentBookData.total_chapters; chapter++) {
+      if (readingProgress.some(p => p.book_name === currentBookData.name && p.chapter_number === chapter && p.is_read)) {
+        return true;
+      }
+    }
+    
+    // Check next books
+    for (let bookIndex = currentBookIndex + 1; bookIndex < books.length; bookIndex++) {
+      const book = books[bookIndex];
+      if (readingProgress.some(p => p.book_name === book.name && p.is_read)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }, [books, currentBook, currentChapterNumber, readingProgress]);
+
   // Error display - only for initial load errors
   if (error && !loading && books.length === 0) {
     return (
@@ -607,6 +823,37 @@ export default function BibleApp() {
     );
   }
 
+  // Show welcome screen if no progress exists
+  if (!loading && readingProgress.length === 0 && !lastReadChapter) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400 flex items-center justify-center p-4">
+        <div className="bg-white/95 rounded-2xl p-8 shadow-xl max-w-lg text-center">
+          <div className="text-6xl mb-6">📖</div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">Maratón Bíblico</h2>
+          <h3 className="text-xl font-semibold text-blue-600 mb-4">Linaje Real 2025</h3>
+          <p className="text-gray-600 mb-6">
+            El maratón aún no ha comenzado. Los capítulos aparecerán aquí conforme 
+            vayan siendo leídos por la congregación durante el evento.
+          </p>
+          <div className="bg-blue-50 p-4 rounded-lg mb-6">
+            <p className="text-blue-800 text-sm">
+              <strong>¿Cómo funciona?</strong><br />
+              Cada capítulo que sea leído durante el maratón se desbloqueará automáticamente 
+              y podrás seguir el progreso en tiempo real.
+            </p>
+          </div>
+          <button
+            onClick={() => loadData()}
+            className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors flex items-center gap-2 mx-auto"
+          >
+            <RefreshCw className="w-5 h-5" />
+            Verificar Progreso
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400 p-4">
       {/* Filter Panel */}
@@ -619,6 +866,7 @@ export default function BibleApp() {
         onToggle={() => setShowFilters(!showFilters)}
         onRefresh={loadData}
         loading={loading}
+        lastReadChapter={lastReadChapter}
       />
 
       {/* Bible Container */}
@@ -656,8 +904,9 @@ export default function BibleApp() {
         <div className="flex gap-3 justify-center items-center flex-wrap">
           <button
             onClick={handlePreviousChapter}
-            disabled={loading || (books.length > 0 && books[0]?.key === currentBook && currentChapterNumber === 1)}
-            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold disabled:opacity-50 hover:shadow-lg transition-all flex items-center gap-2"
+            disabled={loading || !canNavigatePrevious}
+            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all flex items-center gap-2"
+            title={!canNavigatePrevious ? "No hay capítulos anteriores disponibles" : "Capítulo anterior"}
           >
             <ChevronLeft className="w-5 h-5" /> Anterior
           </button>
@@ -666,59 +915,82 @@ export default function BibleApp() {
             value={currentBook}
             onChange={(e) => {
               if (e.target.value) {
-                loadChapter(e.target.value, 1);
+                // Encontrar el primer capítulo leído del libro seleccionado
+                const selectedBook = books.find(b => b.key === e.target.value);
+                if (selectedBook) {
+                  const firstReadChapter = readingProgress.find(
+                    p => p.book_name === selectedBook.name && p.is_read
+                  )?.chapter_number || 1;
+                  
+                  loadChapter(e.target.value, firstReadChapter);
+                }
               }
             }}
             disabled={loading}
-            className="px-4 py-3 rounded-xl border-2 border-indigo-300 bg-white font-semibold focus:border-indigo-500 focus:outline-none disabled:opacity-50"
+            className="px-4 py-3 rounded-xl border-2 border-indigo-300 bg-white font-semibold focus:border-indigo-500 focus:outline-none disabled:opacity-50 min-w-[200px]"
           >
             <option value="">Seleccionar libro...</option>
             <optgroup label="Antiguo Testamento">
-              {books
+              {getAvailableBooks
                 .filter(book => book.testament === 'old')
                 .map(book => (
-                  <option key={book.key} value={book.key}>{book.name}</option>
+                  <option key={book.key} value={book.key}>
+                    {book.name}
+                  </option>
                 ))}
             </optgroup>
             <optgroup label="Nuevo Testamento">
-              {books
+              {getAvailableBooks
                 .filter(book => book.testament === 'new')
                 .map(book => (
-                  <option key={book.key} value={book.key}>{book.name}</option>
+                  <option key={book.key} value={book.key}>
+                    {book.name}
+                  </option>
                 ))}
             </optgroup>
           </select>
           
           <button
             onClick={handleNextChapter}
-            disabled={loading || ((() => {
-              const currentBookData = books.find(book => book.key === currentBook);
-              const isLastBook = books.length > 0 && books[books.length - 1]?.key === currentBook;
-              const isLastChapter = currentBookData && currentChapterNumber === currentBookData.total_chapters;
-              return isLastBook && isLastChapter;
-            })())}
-            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold disabled:opacity-50 hover:shadow-lg transition-all flex items-center gap-2"
+            disabled={loading || !canNavigateNext}
+            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all flex items-center gap-2"
+            title={!canNavigateNext ? "No hay más capítulos disponibles" : "Siguiente capítulo"}
           >
             Siguiente <ChevronRight className="w-5 h-5" />
           </button>
         </div>
         
+        {/* Progress Info */}
+        {stats && (
+          <div className="text-center bg-blue-50 rounded-lg p-3">
+            <p className="text-blue-800 text-sm">
+              <strong>Progreso del Maratón:</strong> {stats.general.total_verses_read.toLocaleString()} versículos leídos 
+              ({Math.round((stats.general.total_verses_read / stats.general.total_verses) * 100)}% completado)
+            </p>
+            <p className="text-blue-600 text-xs mt-1">
+              {getAvailableBooks.length} de {stats.general.total_books} libros disponibles
+            </p>
+          </div>
+        )}
+        
         {/* Chapter Grid Toggle */}
-        <div className="text-center">
-          <button
-            onClick={() => setShowChapterGrid(!showChapterGrid)}
-            disabled={loading}
-            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-          >
-            {showChapterGrid ? 'Ocultar' : 'Mostrar'} Cuadrícula de Capítulos
-          </button>
-        </div>
+        {getAvailableBooks.length > 0 && (
+          <div className="text-center">
+            <button
+              onClick={() => setShowChapterGrid(!showChapterGrid)}
+              disabled={loading}
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              {showChapterGrid ? 'Ocultar' : 'Mostrar'} Cuadrícula de Capítulos
+            </button>
+          </div>
+        )}
         
         {/* Chapter Grid */}
-        {showChapterGrid && (
+        {showChapterGrid && getAvailableBooks.length > 0 && (
           <div className="bg-white/50 rounded-xl p-4 overflow-x-auto">
             <div className="flex gap-4">
-              {books.map((book) => (
+              {getAvailableBooks.map((book) => (
                 <ChapterGrid
                   key={book.key}
                   book={book}

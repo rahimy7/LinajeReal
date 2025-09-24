@@ -1,406 +1,607 @@
-// server/bible/models.ts - VERSIÓN CORREGIDA SIN ERRORES TYPESCRIPT
+// server/bible/models.ts - Versión corregida
 import sql from './db';
 
-// Tipos TypeScript exactos para las respuestas de la base de datos
-export interface Book {
-  id: number;
-  key: string;
-  name: string;
-  testament: 'old' | 'new';
-  order_index: number;
-  total_chapters: number;
-  author?: string;
-  description?: string;
-  created_at?: string;
-}
-
-export interface Chapter {
-  id: number;
-  book_id: number;
-  chapter_number: number;
-  total_verses: number;
-  estimated_reading_time: number;
-  created_at?: string;
-}
-
-export interface Verse {
-  id: number;
-  chapter_id: number;
-  book_id: number;
-  verse_number: number;
-  text: string;
-  word_count: number;
-  created_at?: string;
-}
-
-export interface Reader {
-  id: number;
-  uuid: string;
-  name: string;
-  email?: string;
-  avatar_color: string;
-  is_active: boolean;
-  chapters_read?: number;
-  verses_read?: number;
-  reading_speed_wpm: number;
-  created_at?: string;
-}
-
-export interface ReadingProgress {
-  id: number;
-  reader_id: number;
-  verse_id: number;
-  chapter_id: number;
-  book_id: number;
-  is_read: boolean;
-  read_at?: string;
-  notes?: string;
-  created_at?: string;
-}
-
-// Tipos para las respuestas estructuradas
-export interface ChapterWithVerses {
-  book: {
-    id: number;
-    name: string;
-    key: string;
-    testament: string;
-    description?: string;
-  };
-  chapter: {
-    id: number;
-    number: number;
-    total_verses: number;
-    estimated_reading_time: number;
-  };
-  verses: {
-    id: number;
-    number: number;
-    text: string;
-    word_count: number;
-  }[];
-}
-
-export interface BookStats {
-  id: number;
-  key: string;
-  name: string;
-  testament: string;
-  order_index: number;
-  total_chapters: number;
-  total_verses: number;
-  verses_read: number;
-  completion_percentage: number;
-}
-
-export interface ReaderStats {
-  id: number;
-  name: string;
-  avatar_color: string;
-  reading_speed_wpm: number;
-  chapters_read: number;
-  verses_read: number;
-}
-
-export interface GeneralStats {
-  total_books: number;
-  total_readers: number;
-  total_verses_read: number;
-  total_chapters: number;
-  total_verses: number;
-}
-
-export interface MarathonConfig {
-  id: number;
-  name: string;
-  start_time: string;
-  end_time: string;
-  is_active: boolean;
-  total_participants: number;
-  description?: string;
-  created_at: string;
-}
-
-// Modelos de consulta usando Neon con tipos explícitos
 export class BibleModel {
-  // Obtener todos los libros
-  static async getAllBooks(testament?: string): Promise<Book[]> {
+  // ==================== MÉTODOS BÁSICOS ====================
+  static async getAllBooks(testament?: string) {
     try {
-      if (testament && ['old', 'new'].includes(testament)) {
-        const result = await sql`
-          SELECT * FROM books 
-          WHERE testament = ${testament} 
-          ORDER BY order_index
-        `;
-        return result as Book[];
+      let query;
+      
+      if (testament) {
+        query = sql`SELECT * FROM books WHERE testament = ${testament} ORDER BY order_index`;
       } else {
-        const result = await sql`
-          SELECT * FROM books 
-          ORDER BY order_index
-        `;
-        return result as Book[];
+        query = sql`SELECT * FROM books ORDER BY order_index`;
       }
+      
+      const books = await query;
+      return books;
     } catch (error) {
       console.error('Error obteniendo libros:', error);
       throw error;
     }
   }
 
-  // Obtener un libro específico
-  static async getBookByKey(key: string): Promise<Book | null> {
+  static async getBookByKey(bookKey: string) {
     try {
-      const result = await sql`
-        SELECT * FROM books WHERE key = ${key}
-      `;
-      const books = result as Book[];
-      return books[0] || null;
+      const result = await sql`SELECT * FROM books WHERE key = ${bookKey}`;
+      return result.length > 0 ? result[0] : null;
     } catch (error) {
-      console.error('Error obteniendo libro:', error);
+      console.error('Error obteniendo libro por key:', error);
       throw error;
     }
   }
 
-  // Obtener capítulo con versículos
-  static async getChapterWithVerses(bookKey: string, chapterNum: number): Promise<ChapterWithVerses | null> {
+  static async getChapterWithVerses(bookKey: string, chapterNumber: number) {
     try {
       const result = await sql`
         SELECT 
-          b.id as book_id, b.name as book_name, b.key as book_key, 
-          b.testament, b.description,
-          c.id as chapter_id, c.chapter_number, c.total_verses,
+          b.id as book_id,
+          b.name as book_name,
+          b.key as book_key,
+          b.testament,
+          b.description as book_description,
+          c.id as chapter_id,
+          c.chapter_number,
+          c.total_verses,
           c.estimated_reading_time,
-          v.id as verse_id, v.verse_number, v.text, v.word_count
+          json_agg(
+            json_build_object(
+              'id', v.id,
+              'number', v.verse_number,
+              'text', v.text,
+              'word_count', v.word_count
+            ) ORDER BY v.verse_number
+          ) as verses
         FROM books b
         JOIN chapters c ON b.id = c.book_id
-        LEFT JOIN verses v ON c.id = v.chapter_id
-        WHERE b.key = ${bookKey} AND c.chapter_number = ${chapterNum}
-        ORDER BY v.verse_number
+        JOIN verses v ON c.id = v.chapter_id
+        WHERE b.key = ${bookKey} AND c.chapter_number = ${chapterNumber}
+        GROUP BY b.id, b.name, b.key, b.testament, b.description, 
+                 c.id, c.chapter_number, c.total_verses, c.estimated_reading_time
       `;
-      
-      // Convertir a tipo conocido
-      const rows = result as any[];
-      
-      if (rows.length === 0) {
+
+      if (result.length === 0) {
         return null;
       }
-      
-      const firstRow = rows[0];
+
+      const row = result[0];
       return {
         book: {
-          id: firstRow.book_id,
-          name: firstRow.book_name,
-          key: firstRow.book_key,
-          testament: firstRow.testament,
-          description: firstRow.description
+          id: row.book_id,
+          name: row.book_name,
+          key: row.book_key,
+          testament: row.testament,
+          description: row.book_description
         },
         chapter: {
-          id: firstRow.chapter_id,
-          number: firstRow.chapter_number,
-          total_verses: firstRow.total_verses,
-          estimated_reading_time: firstRow.estimated_reading_time
+          id: row.chapter_id,
+          number: row.chapter_number,
+          total_verses: row.total_verses,
+          estimated_reading_time: row.estimated_reading_time
         },
-        verses: rows
-          .filter(row => row.verse_id)
-          .map(row => ({
-            id: row.verse_id,
-            number: row.verse_number,
-            text: row.text,
-            word_count: row.word_count
-          }))
+        verses: row.verses
       };
     } catch (error) {
-      console.error('Error obteniendo capítulo:', error);
+      console.error('Error obteniendo capítulo con versículos:', error);
       throw error;
     }
   }
 
-  // Obtener lectores
-  static async getReaders(): Promise<ReaderStats[]> {
+  static async getReaders() {
     try {
-      const result = await sql`
-        SELECT r.id, r.name, r.avatar_color, r.reading_speed_wpm, r.is_active,
-               COALESCE(stats.chapters_read, 0)::integer as chapters_read,
-               COALESCE(stats.verses_read, 0)::integer as verses_read
+      const readers = await sql`
+        SELECT 
+          r.*,
+          COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.chapter_id END) as chapters_read,
+          COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END) as verses_read
         FROM readers r
-        LEFT JOIN (
-          SELECT reader_id, 
-                 COUNT(DISTINCT chapter_id) as chapters_read,
-                 COUNT(DISTINCT verse_id) as verses_read
-          FROM reading_progress 
-          WHERE is_read = true 
-          GROUP BY reader_id
-        ) stats ON r.id = stats.reader_id
-        WHERE r.is_active = true 
+        LEFT JOIN reading_progress rp ON r.id = rp.reader_id
+        GROUP BY r.id, r.uuid, r.name, r.email, r.avatar_color, r.is_active, 
+                 r.total_chapters_read, r.total_verses_read, r.reading_speed_wpm, r.created_at
         ORDER BY r.name
       `;
-      
-      return result as ReaderStats[];
+
+      return readers.map(reader => ({
+        ...reader,
+        total_chapters_read: reader.chapters_read || 0,
+        total_verses_read: reader.verses_read || 0
+      }));
     } catch (error) {
       console.error('Error obteniendo lectores:', error);
       throw error;
     }
   }
 
-  // Marcar versículo como leído
-  static async markVerseAsRead(readerId: number, verseId: number, isRead: boolean = true): Promise<ReadingProgress> {
+  // ==================== ESTADÍSTICAS COMPLETAS ====================
+  static async getCompleteStats() {
     try {
-      const readAt = isRead ? new Date().toISOString() : null;
-      
+      // Estadísticas generales
+      const generalResult = await sql`
+        SELECT 
+          (SELECT COUNT(*) FROM books) as total_books,
+          (SELECT COUNT(*) FROM readers) as total_readers,
+          (SELECT COUNT(*) FROM readers WHERE is_active = true) as active_readers,
+          (SELECT COUNT(*) FROM reading_progress WHERE is_read = true) as total_verses_read,
+          (SELECT COUNT(*) FROM chapters) as total_chapters,
+          (SELECT COUNT(*) FROM verses) as total_verses,
+          COALESCE(
+            ROUND((
+              (SELECT COUNT(*) FROM reading_progress WHERE is_read = true)::numeric / 
+              NULLIF((SELECT COUNT(*) FROM verses), 0)
+            ) * 100, 2), 0
+          ) as completion_percentage
+      `;
+
+      const generalStats = generalResult[0];
+
+      // Estadísticas de lectores con progreso
+      const readers = await this.getReaders();
+
+      // Estadísticas de libros
+      const books = await sql`
+        SELECT 
+          b.id,
+          b.key,
+          b.name,
+          b.testament,
+          b.order_index,
+          b.total_chapters,
+          COUNT(DISTINCT v.id) as total_verses,
+          COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END) as verses_read,
+          COALESCE(ROUND((COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END)::numeric / 
+                 NULLIF(COUNT(DISTINCT v.id), 0)) * 100, 2), 0) as completion_percentage
+        FROM books b
+        LEFT JOIN chapters c ON b.id = c.book_id
+        LEFT JOIN verses v ON c.id = v.chapter_id
+        LEFT JOIN reading_progress rp ON v.id = rp.verse_id AND rp.is_read = true
+        GROUP BY b.id, b.key, b.name, b.testament, b.order_index, b.total_chapters
+        ORDER BY b.order_index
+      `;
+
+      // Configuración del maratón
+      const marathonResult = await sql`
+        SELECT * FROM marathon_config WHERE is_active = true LIMIT 1
+      `;
+
+      const marathonConfig = marathonResult.length > 0 ? marathonResult[0] : null;
+
+      return {
+        general: generalStats,
+        readers,
+        books,
+        marathon: marathonConfig
+      };
+
+    } catch (error) {
+      console.error('Error obteniendo estadísticas completas:', error);
+      throw error;
+    }
+  }
+
+  // ==================== GESTIÓN DE LECTORES ====================
+  static async createReader(readerData: {
+    name: string;
+    email?: string;
+    avatar_color?: string;
+    is_active?: boolean;
+    reading_speed_wpm?: number;
+  }) {
+    try {
       const result = await sql`
-        INSERT INTO reading_progress (reader_id, verse_id, chapter_id, book_id, is_read, read_at)
-        SELECT ${readerId}, ${verseId}, v.chapter_id, v.book_id, ${isRead}, ${readAt}
-        FROM verses v WHERE v.id = ${verseId}
-        ON CONFLICT (reader_id, verse_id) 
-        DO UPDATE SET 
-          is_read = EXCLUDED.is_read, 
-          read_at = EXCLUDED.read_at
+        INSERT INTO readers (name, email, avatar_color, is_active, reading_speed_wpm)
+        VALUES (
+          ${readerData.name},
+          ${readerData.email || null},
+          ${readerData.avatar_color || '#6366f1'},
+          ${readerData.is_active !== false},
+          ${readerData.reading_speed_wpm || 200}
+        )
         RETURNING *
       `;
+
+      return result[0];
+    } catch (error) {
+      console.error('Error creando lector:', error);
+      throw error;
+    }
+  }
+
+  static async updateReader(readerId: number, readerData: {
+    name?: string;
+    email?: string;
+    avatar_color?: string;
+    is_active?: boolean;
+    reading_speed_wpm?: number;
+  }) {
+    try {
+      const result = await sql`
+        UPDATE readers SET
+          name = COALESCE(${readerData.name}, name),
+          email = COALESCE(${readerData.email}, email),
+          avatar_color = COALESCE(${readerData.avatar_color}, avatar_color),
+          is_active = COALESCE(${readerData.is_active}, is_active),
+          reading_speed_wpm = COALESCE(${readerData.reading_speed_wpm}, reading_speed_wpm)
+        WHERE id = ${readerId}
+        RETURNING *
+      `;
+
+      if (result.length === 0) {
+        throw new Error('Lector no encontrado');
+      }
+
+      return result[0];
+    } catch (error) {
+      console.error('Error actualizando lector:', error);
+      throw error;
+    }
+  }
+
+  static async deleteReader(readerId: number) {
+    try {
+      // Primero eliminamos el progreso de lectura
+      await sql`DELETE FROM reading_progress WHERE reader_id = ${readerId}`;
       
-      const progress = result as ReadingProgress[];
-      return progress[0];
+      // Luego eliminamos el lector
+      const result = await sql`
+        DELETE FROM readers WHERE id = ${readerId} RETURNING *
+      `;
+
+      if (result.length === 0) {
+        throw new Error('Lector no encontrado');
+      }
+
+      return result[0];
+    } catch (error) {
+      console.error('Error eliminando lector:', error);
+      throw error;
+    }
+  }
+
+  // ==================== PROGRESO DE LECTURA ====================
+  static async markVerseAsRead(readerId: number, verseId: number, isRead: boolean = true, notes?: string) {
+    try {
+      // Obtener información del versículo
+      const verseResult = await sql`
+        SELECT v.id, v.chapter_id, c.book_id 
+        FROM verses v
+        JOIN chapters c ON v.chapter_id = c.id
+        WHERE v.id = ${verseId}
+      `;
+
+      if (verseResult.length === 0) {
+        throw new Error('Versículo no encontrado');
+      }
+
+      const verseInfo = verseResult[0];
+
+      // Insertar o actualizar el progreso
+      const result = await sql`
+        INSERT INTO reading_progress (reader_id, verse_id, chapter_id, book_id, is_read, read_at, notes)
+        VALUES (
+          ${readerId}, 
+          ${verseId}, 
+          ${verseInfo.chapter_id}, 
+          ${verseInfo.book_id}, 
+          ${isRead},
+          ${isRead ? new Date().toISOString() : null},
+          ${notes || null}
+        )
+        ON CONFLICT (reader_id, verse_id) 
+        DO UPDATE SET 
+          is_read = EXCLUDED.is_read,
+          read_at = CASE WHEN EXCLUDED.is_read THEN NOW() ELSE NULL END,
+          notes = COALESCE(EXCLUDED.notes, reading_progress.notes)
+        RETURNING *
+      `;
+
+      // Actualizar contadores en la tabla readers
+      await this.updateReaderCounters(readerId);
+
+      return result[0];
     } catch (error) {
       console.error('Error marcando verso como leído:', error);
       throw error;
     }
   }
 
-  // Obtener progreso de un lector
-  static async getReaderProgress(readerId: number, chapterId?: number): Promise<any[]> {
+  static async updateReaderCounters(readerId: number) {
     try {
+      await sql`
+        UPDATE readers SET
+          total_verses_read = (
+            SELECT COUNT(*) FROM reading_progress 
+            WHERE reader_id = ${readerId} AND is_read = true
+          ),
+          total_chapters_read = (
+            SELECT COUNT(DISTINCT chapter_id) FROM reading_progress 
+            WHERE reader_id = ${readerId} AND is_read = true
+          )
+        WHERE id = ${readerId}
+      `;
+    } catch (error) {
+      console.error('Error actualizando contadores del lector:', error);
+      throw error;
+    }
+  }
+
+  static async getReaderProgress(readerId: number, chapterId?: number) {
+    try {
+      let query;
+      
       if (chapterId) {
-        const result = await sql`
-          SELECT rp.*, v.verse_number, v.text
+        query = sql`
+          SELECT 
+            rp.*,
+            v.verse_number,
+            v.text,
+            c.chapter_number,
+            b.name as book_name
           FROM reading_progress rp
           JOIN verses v ON rp.verse_id = v.id
+          JOIN chapters c ON v.chapter_id = c.id
+          JOIN books b ON c.book_id = b.id
           WHERE rp.reader_id = ${readerId} AND rp.chapter_id = ${chapterId}
-          ORDER BY v.verse_number
+          ORDER BY b.order_index, c.chapter_number, v.verse_number
         `;
-        return result as any[];
       } else {
-        const result = await sql`
-          SELECT rp.*, v.verse_number, v.text, c.chapter_number, b.name as book_name
+        query = sql`
+          SELECT 
+            rp.*,
+            v.verse_number,
+            v.text,
+            c.chapter_number,
+            b.name as book_name
           FROM reading_progress rp
           JOIN verses v ON rp.verse_id = v.id
-          JOIN chapters c ON rp.chapter_id = c.id
-          JOIN books b ON rp.book_id = b.id
+          JOIN chapters c ON v.chapter_id = c.id
+          JOIN books b ON c.book_id = b.id
           WHERE rp.reader_id = ${readerId}
           ORDER BY b.order_index, c.chapter_number, v.verse_number
         `;
-        return result as any[];
       }
+
+      return await query;
     } catch (error) {
-      console.error('Error obteniendo progreso:', error);
+      console.error('Error obteniendo progreso del lector:', error);
       throw error;
     }
   }
 
-  // Obtener estadísticas generales
-  static async getStats(): Promise<{
-    general: GeneralStats;
-    book_progress: BookStats[];
-    top_readers: ReaderStats[];
-    marathon: MarathonConfig | null;
-  }> {
+  // ==================== CONFIGURACIÓN DEL MARATÓN ====================
+  static async getMarathonConfig() {
     try {
-      const [generalResult, bookProgressResult, readerStatsResult, marathonResult] = await Promise.all([
-        sql`
-          SELECT 
-            (SELECT COUNT(*)::integer FROM books) as total_books,
-            (SELECT COUNT(*)::integer FROM readers WHERE is_active = true) as total_readers,
-            (SELECT COUNT(*)::integer FROM reading_progress WHERE is_read = true) as total_verses_read,
-            (SELECT COUNT(*)::integer FROM chapters) as total_chapters,
-            (SELECT COUNT(*)::integer FROM verses) as total_verses
-        `,
-        sql`
-          SELECT 
-            b.id, b.key, b.name, b.testament, b.order_index, b.total_chapters,
-            COUNT(DISTINCT v.id)::integer as total_verses,
-            COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END)::integer as verses_read,
-            COALESCE(ROUND((COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END)::numeric / 
-                   NULLIF(COUNT(DISTINCT v.id), 0)) * 100, 2), 0) as completion_percentage
-          FROM books b
-          LEFT JOIN chapters c ON b.id = c.book_id
-          LEFT JOIN verses v ON c.id = v.chapter_id
-          LEFT JOIN reading_progress rp ON v.id = rp.verse_id AND rp.is_read = true
-          GROUP BY b.id, b.key, b.name, b.testament, b.order_index, b.total_chapters
-          ORDER BY b.order_index
-        `,
-        sql`
-          SELECT r.id, r.name, r.avatar_color, r.reading_speed_wpm,
-                 COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.chapter_id END)::integer as chapters_read,
-                 COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END)::integer as verses_read
-          FROM readers r
-          LEFT JOIN reading_progress rp ON r.id = rp.reader_id
-          WHERE r.is_active = true
-          GROUP BY r.id, r.name, r.avatar_color, r.reading_speed_wpm
-          ORDER BY chapters_read DESC, verses_read DESC
-          LIMIT 10
-        `,
-        sql`
-          SELECT * FROM marathon_config 
-          WHERE is_active = true 
-          ORDER BY created_at DESC 
-          LIMIT 1
-        `
-      ]);
-      
-      const general = (generalResult as GeneralStats[])[0];
-      const bookProgress = bookProgressResult as BookStats[];
-      const topReaders = readerStatsResult as ReaderStats[];
-      const marathonArray = marathonResult as MarathonConfig[];
-      
-      return {
-        general,
-        book_progress: bookProgress,
-        top_readers: topReaders,
-        marathon: marathonArray[0] || null
-      };
+      const result = await sql`
+        SELECT * FROM marathon_config WHERE is_active = true LIMIT 1
+      `;
+      return result.length > 0 ? result[0] : null;
     } catch (error) {
-      console.error('Error obteniendo estadísticas:', error);
+      console.error('Error obteniendo configuración del maratón:', error);
       throw error;
     }
   }
 
-  // Buscar versículos
-  static async searchVerses(query: string, testament?: string, limit: number = 20): Promise<any[]> {
+  static async updateMarathonConfig(configData: {
+    name?: string;
+    start_time?: string;
+    end_time?: string;
+    is_active?: boolean;
+    description?: string;
+  }) {
     try {
-      const searchTerm = `%${query}%`;
+      const currentConfig = await this.getMarathonConfig();
       
-      if (testament && ['old', 'new'].includes(testament)) {
+      if (!currentConfig) {
         const result = await sql`
-          SELECT 
-            v.id, v.verse_number, v.text, v.word_count,
-            c.chapter_number, 
-            b.name as book_name, b.key as book_key, b.testament
-          FROM verses v
-          JOIN chapters c ON v.chapter_id = c.id
-          JOIN books b ON c.book_id = b.id
-          WHERE v.text ILIKE ${searchTerm} AND b.testament = ${testament}
-          ORDER BY b.order_index, c.chapter_number, v.verse_number
-          LIMIT ${limit}
+          INSERT INTO marathon_config (name, start_time, end_time, is_active, description)
+          VALUES (
+            ${configData.name || 'Maratón Bíblico'},
+            ${configData.start_time || new Date().toISOString()},
+            ${configData.end_time || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()},
+            ${configData.is_active !== false},
+            ${configData.description || 'Descripción del maratón bíblico'}
+          )
+          RETURNING *
         `;
-        return result as any[];
+        return result[0];
       } else {
         const result = await sql`
+          UPDATE marathon_config SET
+            name = COALESCE(${configData.name}, name),
+            start_time = COALESCE(${configData.start_time}, start_time),
+            end_time = COALESCE(${configData.end_time}, end_time),
+            is_active = COALESCE(${configData.is_active}, is_active),
+            description = COALESCE(${configData.description}, description),
+            total_participants = (SELECT COUNT(*) FROM readers WHERE is_active = true)
+          WHERE id = ${currentConfig.id}
+          RETURNING *
+        `;
+        return result[0];
+      }
+    } catch (error) {
+      console.error('Error actualizando configuración del maratón:', error);
+      throw error;
+    }
+  }
+
+  // ==================== BÚSQUEDA ====================
+  static async searchVerses(query: string, testament?: string, limit: number = 50) {
+    try {
+      const searchTerms = query.split(' ').filter(term => term.length > 2);
+      
+      if (searchTerms.length === 0) {
+        return [];
+      }
+
+      let sqlQuery;
+      
+      if (testament) {
+        sqlQuery = sql`
           SELECT 
-            v.id, v.verse_number, v.text, v.word_count,
-            c.chapter_number, 
-            b.name as book_name, b.key as book_key, b.testament
+            v.id,
+            v.verse_number,
+            v.text,
+            c.chapter_number,
+            b.name as book_name,
+            b.key as book_key,
+            b.testament
           FROM verses v
           JOIN chapters c ON v.chapter_id = c.id
           JOIN books b ON c.book_id = b.id
-          WHERE v.text ILIKE ${searchTerm}
+          WHERE b.testament = ${testament}
+            AND v.text ILIKE ${'%' + query + '%'}
           ORDER BY b.order_index, c.chapter_number, v.verse_number
           LIMIT ${limit}
         `;
-        return result as any[];
+      } else {
+        sqlQuery = sql`
+          SELECT 
+            v.id,
+            v.verse_number,
+            v.text,
+            c.chapter_number,
+            b.name as book_name,
+            b.key as book_key,
+            b.testament
+          FROM verses v
+          JOIN chapters c ON v.chapter_id = c.id
+          JOIN books b ON c.book_id = b.id
+          WHERE v.text ILIKE ${'%' + query + '%'}
+          ORDER BY b.order_index, c.chapter_number, v.verse_number
+          LIMIT ${limit}
+        `;
       }
+
+      return await sqlQuery;
     } catch (error) {
       console.error('Error buscando versículos:', error);
       throw error;
     }
   }
-}
 
-export default sql;
+  // ==================== MÉTODOS PARA TIEMPO REAL ====================
+  static async getMarathonProgress() {
+    try {
+      const result = await sql`
+        SELECT 
+          COALESCE(
+            ROUND((COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END)::numeric / 
+                  NULLIF(COUNT(DISTINCT v.id), 0)) * 100, 2), 0
+          ) as overall_completion_percentage,
+          COUNT(DISTINCT v.id) as total_verses,
+          COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END) as verses_read,
+          COUNT(DISTINCT c.id) as total_chapters,
+          COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.chapter_id END) as chapters_with_progress,
+          COUNT(DISTINCT b.id) as total_books,
+          COUNT(DISTINCT CASE WHEN rp.is_read THEN b.id END) as books_with_progress
+        FROM verses v
+        JOIN chapters c ON v.chapter_id = c.id
+        JOIN books b ON c.book_id = b.id
+        LEFT JOIN reading_progress rp ON v.id = rp.verse_id
+      `;
+
+      return result[0];
+    } catch (error) {
+      console.error('Error obteniendo progreso del maratón:', error);
+      throw error;
+    }
+  }
+
+  static async getActiveReadersRealTime() {
+    try {
+      const activeReaders = await sql`
+        SELECT 
+          r.id,
+          r.name,
+          r.avatar_color,
+          COUNT(*) as recent_verses_read,
+          MAX(rp.read_at) as last_activity
+        FROM readers r
+        JOIN reading_progress rp ON r.id = rp.reader_id
+        WHERE rp.read_at >= NOW() - INTERVAL '1 hour'
+          AND rp.is_read = true
+          AND r.is_active = true
+        GROUP BY r.id, r.name, r.avatar_color
+        ORDER BY last_activity DESC
+      `;
+
+      return activeReaders;
+    } catch (error) {
+      console.error('Error obteniendo lectores activos en tiempo real:', error);
+      throw error;
+    }
+  }
+
+  // ==================== MÉTODOS ADICIONALES PARA REPORTES ====================
+  static async getDailyProgressReport(date: Date) {
+    try {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const dailyProgress = await sql`
+        SELECT 
+          DATE(rp.read_at) as read_date,
+          COUNT(DISTINCT rp.reader_id) as active_readers,
+          COUNT(*) as verses_read,
+          COUNT(DISTINCT rp.chapter_id) as chapters_completed
+        FROM reading_progress rp
+        JOIN readers r ON rp.reader_id = r.id
+        WHERE rp.read_at >= ${startOfDay.toISOString()}
+          AND rp.read_at <= ${endOfDay.toISOString()}
+          AND rp.is_read = true
+        GROUP BY DATE(rp.read_at)
+      `;
+
+      return {
+        date: date.toISOString().split('T')[0],
+        summary: dailyProgress.length > 0 ? dailyProgress[0] : {
+          read_date: date.toISOString().split('T')[0],
+          active_readers: 0,
+          verses_read: 0,
+          chapters_completed: 0
+        }
+      };
+
+    } catch (error) {
+      console.error('Error obteniendo reporte diario:', error);
+      throw error;
+    }
+  }
+
+  static async getReaderDetailedReport(readerId: number) {
+    try {
+      const readerResult = await sql`
+        SELECT 
+          r.*,
+          COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.chapter_id END) as total_chapters_read,
+          COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END) as total_verses_read,
+          MIN(rp.read_at) as first_read_date,
+          MAX(rp.read_at) as last_read_date,
+          COUNT(DISTINCT DATE(rp.read_at)) as active_days
+        FROM readers r
+        LEFT JOIN reading_progress rp ON r.id = rp.reader_id
+        WHERE r.id = ${readerId}
+        GROUP BY r.id, r.uuid, r.name, r.email, r.avatar_color, r.is_active, 
+                 r.total_chapters_read, r.total_verses_read, r.reading_speed_wpm, r.created_at
+      `;
+
+      if (readerResult.length === 0) {
+        throw new Error('Lector no encontrado');
+      }
+
+      return {
+        reader_info: {
+          ...readerResult[0],
+          total_chapters_read: readerResult[0].total_chapters_read || 0,
+          total_verses_read: readerResult[0].total_verses_read || 0
+        }
+      };
+
+    } catch (error) {
+      console.error('Error obteniendo reporte detallado del lector:', error);
+      throw error;
+    }
+  }
+}
