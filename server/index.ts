@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import cors from 'cors';
 import dotenv from 'dotenv';
 import bibleRoutes from './bible/routes';
+import { testConnection, initializeDatabase } from './bible/db';
 
 dotenv.config();
 
@@ -47,8 +48,26 @@ app.use((req, res, next) => {
   next();
 });
 
+async function initializeBibleDatabase() {
+  try {
+    console.log('🏛️ [Linaje Real] Inicializando base de datos bíblica...');
+    const connectionOk = await testConnection();
+    
+    if (connectionOk) {
+      await initializeDatabase();
+      console.log('📖 [Bible API] Base de datos inicializada correctamente');
+    } else {
+      console.log('⚠️ [Bible API] Sin conexión a base de datos - algunas funciones limitadas');
+    }
+  } catch (error) {
+    console.error('❌ [Bible API] Error inicializando:', error);
+  }
+}
+
 (async () => {
   const server = await registerRoutes(app);
+
+  await initializeBibleDatabase();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
