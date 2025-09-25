@@ -24,7 +24,7 @@ import AdminIndexPage from "./components/AdminIndexPage";
 function LayoutWithHeader({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <Header />
+      
       {children}
     </>
   );

@@ -1,4 +1,4 @@
-// server/bible/models.ts - Versión corregida
+// server/bible/model.ts - Versión corregida
 import sql from './db';
 
 export class BibleModel {
@@ -114,31 +114,68 @@ export class BibleModel {
 
   // ==================== ESTADÍSTICAS COMPLETAS ====================
   static async getCompleteStats() {
+    console.log('📊 [BibleModel] Obteniendo estadísticas completas...');
+    
     try {
       // Estadísticas generales
-      const generalResult = await sql`
+      const generalStatsResult = await sql`
         SELECT 
-          (SELECT COUNT(*) FROM books) as total_books,
-          (SELECT COUNT(*) FROM readers) as total_readers,
-          (SELECT COUNT(*) FROM readers WHERE is_active = true) as active_readers,
-          (SELECT COUNT(*) FROM reading_progress WHERE is_read = true) as total_verses_read,
-          (SELECT COUNT(*) FROM chapters) as total_chapters,
-          (SELECT COUNT(*) FROM verses) as total_verses,
-          COALESCE(
-            ROUND((
-              (SELECT COUNT(*) FROM reading_progress WHERE is_read = true)::numeric / 
-              NULLIF((SELECT COUNT(*) FROM verses), 0)
-            ) * 100, 2), 0
-          ) as completion_percentage
+          COUNT(DISTINCT b.id) as total_books,
+          COUNT(DISTINCT c.id) as total_chapters,
+          COUNT(DISTINCT v.id) as total_verses,
+          COUNT(DISTINCT r.id) as total_readers,
+          COUNT(DISTINCT CASE WHEN r.is_active THEN r.id END) as active_readers
+        FROM books b
+        JOIN chapters c ON c.book_id = b.id
+        JOIN verses v ON v.chapter_id = c.id
+        CROSS JOIN readers r
       `;
 
-      const generalStats = generalResult[0];
+      // Estadísticas de progreso de lectura (versículos)
+      const progressStatsResult = await sql`
+        SELECT 
+          COUNT(DISTINCT rp.verse_id) as total_verses_read,
+          COUNT(DISTINCT rp.reader_id) as readers_with_progress
+        FROM reading_progress rp
+        WHERE rp.is_read = true
+      `;
 
-      // Estadísticas de lectores con progreso
-      const readers = await this.getReaders();
+      // Estadísticas de capítulos completados
+      const chapterStatsResult = await sql`
+        SELECT 
+          COUNT(DISTINCT CONCAT(b.key, '-', c.chapter_number)) as total_chapters_read,
+          COUNT(DISTINCT b.id) as books_with_progress
+        FROM reading_progress rp
+        JOIN verses v ON rp.verse_id = v.id
+        JOIN chapters c ON v.chapter_id = c.id
+        JOIN books b ON c.book_id = b.id
+        WHERE rp.is_read = true
+      `;
 
-      // Estadísticas de libros
-      const books = await sql`
+      // Lectores activos
+      const readersResult = await sql`
+        SELECT 
+          r.id,
+          r.uuid,
+          r.name,
+          r.email,
+          r.avatar_color,
+          r.is_active,
+          COUNT(DISTINCT rp.verse_id) as total_verses_read,
+          COUNT(DISTINCT CONCAT(b.key, '-', c.chapter_number)) as total_chapters_read,
+          r.reading_speed_wpm
+        FROM readers r
+        LEFT JOIN reading_progress rp ON r.id = rp.reader_id AND rp.is_read = true
+        LEFT JOIN verses v ON rp.verse_id = v.id
+        LEFT JOIN chapters c ON v.chapter_id = c.id
+        LEFT JOIN books b ON c.book_id = b.id
+        WHERE r.is_active = true
+        GROUP BY r.id, r.uuid, r.name, r.email, r.avatar_color, r.is_active, r.reading_speed_wpm
+        ORDER BY total_chapters_read DESC, total_verses_read DESC
+      `;
+
+      // Libros con progreso
+      const booksResult = await sql`
         SELECT 
           b.id,
           b.key,
@@ -146,34 +183,84 @@ export class BibleModel {
           b.testament,
           b.order_index,
           b.total_chapters,
-          COUNT(DISTINCT v.id) as total_verses,
-          COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END) as verses_read,
-          COALESCE(ROUND((COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END)::numeric / 
-                 NULLIF(COUNT(DISTINCT v.id), 0)) * 100, 2), 0) as completion_percentage
+          b.author,
+          b.description,
+          COUNT(DISTINCT CASE WHEN rp.is_read THEN c.id END) as chapters_completed,
+          COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END) as verses_completed
         FROM books b
         LEFT JOIN chapters c ON b.id = c.book_id
         LEFT JOIN verses v ON c.id = v.chapter_id
-        LEFT JOIN reading_progress rp ON v.id = rp.verse_id AND rp.is_read = true
-        GROUP BY b.id, b.key, b.name, b.testament, b.order_index, b.total_chapters
+        LEFT JOIN reading_progress rp ON v.id = rp.verse_id
+        GROUP BY b.id, b.key, b.name, b.testament, b.order_index, b.total_chapters, b.author, b.description
         ORDER BY b.order_index
       `;
 
       // Configuración del maratón
-      const marathonResult = await sql`
-        SELECT * FROM marathon_config WHERE is_active = true LIMIT 1
-      `;
+      const marathonConfig = await this.getMarathonConfig();
 
-      const marathonConfig = marathonResult.length > 0 ? marathonResult[0] : null;
+      // Extraer datos
+      const generalStats = generalStatsResult[0];
+      const progressStats = progressStatsResult[0];
+      const chapterStats = chapterStatsResult[0];
 
-      return {
-        general: generalStats,
-        readers,
-        books,
+      // Cálculos corregidos basados en capítulos
+      const totalChapters = parseInt(generalStats.total_chapters);
+      const chaptersRead = parseInt(chapterStats.total_chapters_read);
+      const chaptersCompletionPercentage = totalChapters > 0 ? (chaptersRead / totalChapters) * 100 : 0;
+
+      // Cálculos basados en versículos
+      const totalVerses = parseInt(generalStats.total_verses);
+      const versesRead = parseInt(progressStats.total_verses_read);
+      const versesCompletionPercentage = totalVerses > 0 ? (versesRead / totalVerses) * 100 : 0;
+
+      const stats = {
+        general: {
+          // Datos básicos
+          total_books: parseInt(generalStats.total_books),
+          total_chapters: totalChapters,
+          total_verses: totalVerses,
+          total_readers: parseInt(generalStats.total_readers),
+          active_readers: parseInt(generalStats.active_readers),
+          
+          // Estadísticas de capítulos
+          total_chapters_read: chaptersRead,
+          chapters_completion_percentage: chaptersCompletionPercentage,
+          books_with_progress: parseInt(chapterStats.books_with_progress),
+          
+          // Estadísticas de versículos
+          total_verses_read: versesRead,
+          verses_completion_percentage: versesCompletionPercentage,
+          readers_with_progress: parseInt(progressStats.readers_with_progress),
+          
+          // Porcentaje principal basado en capítulos
+          completion_percentage: chaptersCompletionPercentage
+        },
+        readers: readersResult.map(reader => ({
+          ...reader,
+          total_verses_read: parseInt(reader.total_verses_read) || 0,
+          total_chapters_read: parseInt(reader.total_chapters_read) || 0
+        })),
+        books: booksResult.map(book => ({
+          ...book,
+          chapters_completed: parseInt(book.chapters_completed) || 0,
+          verses_completed: parseInt(book.verses_completed) || 0,
+          completion_percentage: book.total_chapters > 0 
+            ? ((parseInt(book.chapters_completed) || 0) / book.total_chapters) * 100 
+            : 0
+        })),
         marathon: marathonConfig
       };
 
+      console.log('✅ [BibleModel] Estadísticas calculadas:', {
+        total_chapters: stats.general.total_chapters,
+        chapters_read: stats.general.total_chapters_read,
+        completion_percentage: `${stats.general.completion_percentage.toFixed(2)}%`
+      });
+
+      return stats;
+
     } catch (error) {
-      console.error('Error obteniendo estadísticas completas:', error);
+      console.error('❌ [BibleModel] Error obteniendo estadísticas:', error);
       throw error;
     }
   }
@@ -376,7 +463,13 @@ export class BibleModel {
       return result.length > 0 ? result[0] : null;
     } catch (error) {
       console.error('Error obteniendo configuración del maratón:', error);
-      throw error;
+      // Devolver config por defecto si hay error
+      return {
+        id: 1,
+        name: 'Maratón Bíblico',
+        is_active: true,
+        description: 'Maratón de lectura bíblica'
+      };
     }
   }
 
@@ -527,80 +620,6 @@ export class BibleModel {
       return activeReaders;
     } catch (error) {
       console.error('Error obteniendo lectores activos en tiempo real:', error);
-      throw error;
-    }
-  }
-
-  // ==================== MÉTODOS ADICIONALES PARA REPORTES ====================
-  static async getDailyProgressReport(date: Date) {
-    try {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      const dailyProgress = await sql`
-        SELECT 
-          DATE(rp.read_at) as read_date,
-          COUNT(DISTINCT rp.reader_id) as active_readers,
-          COUNT(*) as verses_read,
-          COUNT(DISTINCT rp.chapter_id) as chapters_completed
-        FROM reading_progress rp
-        JOIN readers r ON rp.reader_id = r.id
-        WHERE rp.read_at >= ${startOfDay.toISOString()}
-          AND rp.read_at <= ${endOfDay.toISOString()}
-          AND rp.is_read = true
-        GROUP BY DATE(rp.read_at)
-      `;
-
-      return {
-        date: date.toISOString().split('T')[0],
-        summary: dailyProgress.length > 0 ? dailyProgress[0] : {
-          read_date: date.toISOString().split('T')[0],
-          active_readers: 0,
-          verses_read: 0,
-          chapters_completed: 0
-        }
-      };
-
-    } catch (error) {
-      console.error('Error obteniendo reporte diario:', error);
-      throw error;
-    }
-  }
-
-  static async getReaderDetailedReport(readerId: number) {
-    try {
-      const readerResult = await sql`
-        SELECT 
-          r.*,
-          COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.chapter_id END) as total_chapters_read,
-          COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END) as total_verses_read,
-          MIN(rp.read_at) as first_read_date,
-          MAX(rp.read_at) as last_read_date,
-          COUNT(DISTINCT DATE(rp.read_at)) as active_days
-        FROM readers r
-        LEFT JOIN reading_progress rp ON r.id = rp.reader_id
-        WHERE r.id = ${readerId}
-        GROUP BY r.id, r.uuid, r.name, r.email, r.avatar_color, r.is_active, 
-                 r.total_chapters_read, r.total_verses_read, r.reading_speed_wpm, r.created_at
-      `;
-
-      if (readerResult.length === 0) {
-        throw new Error('Lector no encontrado');
-      }
-
-      return {
-        reader_info: {
-          ...readerResult[0],
-          total_chapters_read: readerResult[0].total_chapters_read || 0,
-          total_verses_read: readerResult[0].total_verses_read || 0
-        }
-      };
-
-    } catch (error) {
-      console.error('Error obteniendo reporte detallado del lector:', error);
       throw error;
     }
   }

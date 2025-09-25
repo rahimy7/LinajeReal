@@ -230,6 +230,37 @@ router.post('/progress/chapter', asyncHandler(async (req: Request, res: Response
   }
 }));
 
+// GET /api/bible/progress/all - Para Biblia Interactiva (sin requerir readerId)
+// GET /api/bible/progress/all - Para Biblia Interactiva (sin requerir readerId)
+router.get('/progress/all', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const allProgress = await sql`
+      SELECT DISTINCT
+        b.key as book_key,
+        b.name as book_name,
+        c.chapter_number,
+        r.id as reader_id,
+        r.name as reader_name,
+        rp.is_read,
+        MAX(rp.read_at) as last_read_at,
+        b.order_index
+      FROM reading_progress rp
+      JOIN verses v ON rp.verse_id = v.id  
+      JOIN chapters c ON v.chapter_id = c.id
+      JOIN books b ON c.book_id = b.id
+      JOIN readers r ON rp.reader_id = r.id
+      WHERE rp.is_read = true
+      GROUP BY b.key, b.name, c.chapter_number, r.id, r.name, rp.is_read, b.order_index
+      ORDER BY b.order_index, c.chapter_number
+    `;
+    
+    sendResponse(res, allProgress, 'Progreso completo obtenido');
+  } catch (error) {
+    console.error('Error:', error);
+    return sendResponse(res, null, 'Error interno del servidor', 500);
+  }
+}));
+
 router.get('/progress/:readerId', asyncHandler(async (req: Request, res: Response) => {
   const { readerId } = req.params;
   const { chapter_id } = req.query;
@@ -246,33 +277,7 @@ router.get('/progress/:readerId', asyncHandler(async (req: Request, res: Respons
   sendResponse(res, progress, 'Progreso del lector obtenido exitosamente');
 }));
 
-router.get('/progress/all', asyncHandler(async (req: Request, res: Response) => {
-  const { limit = 1000 } = req.query;
-  
-  const progress = await sql`
-    SELECT 
-      rp.reader_id,
-      r.name as reader_name,
-      rp.verse_id,
-      b.name as book_name,
-      b.key as book_key,
-      c.chapter_number,
-      v.verse_number,
-      rp.is_read,
-      rp.read_at,
-      rp.notes
-    FROM reading_progress rp
-    JOIN readers r ON rp.reader_id = r.id
-    JOIN verses v ON rp.verse_id = v.id
-    JOIN chapters c ON v.chapter_id = c.id
-    JOIN books b ON c.book_id = b.id
-    WHERE rp.is_read = true
-    ORDER BY b.order_index, c.chapter_number, v.verse_number
-    LIMIT ${parseInt(limit as string)}
-  `;
-  
-  sendResponse(res, progress, 'Progreso de lectura completo obtenido');
-}));
+
 
 router.get('/progress/chapter/:bookKey/:chapterNum', asyncHandler(async (req: Request, res: Response) => {
   const { bookKey, chapterNum } = req.params;
@@ -464,5 +469,8 @@ router.use((err: any, req: Request, res: Response, next: NextFunction) => {
   
   sendResponse(res, null, message, status);
 });
+
+
+
 
 export default router;

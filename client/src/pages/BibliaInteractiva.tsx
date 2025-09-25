@@ -64,6 +64,7 @@ interface Stats {
 interface ReadingProgress {
   reader_id: number;
   reader_name: string;
+   book_key: string;  
   verse_id: number;
   book_name: string;
   chapter_number: number;
@@ -199,6 +200,7 @@ const BookPage: React.FC<BookPageProps> = ({ side, content, pageNumber }) => {
   );
 };
 
+
 interface ChapterGridProps {
   book: Book;
   readingProgress: ReadingProgress[];
@@ -276,6 +278,8 @@ const ChapterGrid: React.FC<ChapterGridProps> = ({
     return baseClass;
   };
 
+  
+
   return (
     <div className="min-w-[150px]">
       <div 
@@ -328,6 +332,11 @@ interface FilterPanelProps {
   onRefresh: () => void;
   loading: boolean;
   lastReadChapter: LastReadChapter | null;
+   chapterStats: {
+    completedChapters: number;
+    totalChapters: number;
+    percentage: number;
+  };
 }
 
 const FilterPanel: React.FC<FilterPanelProps> = ({
@@ -341,11 +350,14 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   loading,
   lastReadChapter
 }) => {
+
+  
   const currentReaderData = currentReader ? readers.find(r => r.id === currentReader) : null;
   const totalChapters = stats?.general.total_chapters || 0;
   const totalRead = stats?.general.total_verses_read || 0;
   const totalVerses = stats?.general.total_verses || 1;
   const percentage = Math.round((totalRead / totalVerses) * 100);
+ 
 
   return (
     <div className="mb-4">
@@ -430,7 +442,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                 <div className="text-green-900 text-lg font-bold">{stats.general.active_readers}</div>
               </div>
               <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200">
-                <div className="text-purple-800 text-xs font-medium">Versículos Leídos</div>
+                <div className="text-purple-800 text-xs font-medium">Capítulos Leídos</div>
                 <div className="text-purple-900 text-lg font-bold">{stats.general.total_verses_read.toLocaleString()}</div>
               </div>
               <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-3 rounded-lg border border-amber-200">
@@ -499,8 +511,24 @@ export default function BibliaInteractiva() {
   const [showChapterGrid, setShowChapterGrid] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const calculateChapterStats = useCallback(() => {
+  if (!readingProgress.length) return { completedChapters: 0, totalChapters: 1189, percentage: 0 };
+  
+  const uniqueChapters = new Set();
+  readingProgress.forEach(p => {
+    if (p.is_read) {
+      uniqueChapters.add(`${p.book_key}-${p.chapter_number}`);
+    }
+  });
+  
+  const completedChapters = uniqueChapters.size;
+  const totalChapters = 1189;
+  const percentage = (completedChapters / totalChapters) * 100;
+  
+  return { completedChapters, totalChapters, percentage };
+}, [readingProgress]);
 
-  // Load initial data
+// Load initial data
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -520,14 +548,23 @@ export default function BibliaInteractiva() {
       setReadingProgress(progressData);
       setLastReadChapter(lastChapterData);
       
-      // Cargar el último capítulo leído si existe
+      // Cargar el último capítulo automáticamente
       if (lastChapterData && lastChapterData.book_key) {
-        await loadChapter(lastChapterData.book_key, lastChapterData.chapter_number);
-      } else {
-        // Si no hay progreso, mostrar página en blanco
-        setCurrentChapter(null);
-        setCurrentBook('');
-        setCurrentChapterNumber(1);
+        console.log('🚀 Auto-loading last chapter:', lastChapterData);
+        const chapterData = await api.getChapter(lastChapterData.book_key, lastChapterData.chapter_number);
+        setCurrentChapter(chapterData);
+        setCurrentBook(lastChapterData.book_key);
+        setCurrentChapterNumber(lastChapterData.chapter_number);
+      } else if (progressData.length > 0) {
+        // Si no hay último capítulo, cargar el primero disponible
+        const firstRead = progressData.find(p => p.is_read);
+        if (firstRead) {
+          console.log('🚀 Auto-loading first available:', firstRead);
+          const chapterData = await api.getChapter(firstRead.book_key, firstRead.chapter_number);
+          setCurrentChapter(chapterData);
+          setCurrentBook(firstRead.book_key);
+          setCurrentChapterNumber(firstRead.chapter_number);
+        }
       }
       
     } catch (err) {
@@ -539,43 +576,55 @@ export default function BibliaInteractiva() {
   }, []);
 
   // Load specific chapter
-  const loadChapter = useCallback(async (bookKey: string, chapterNumber: number) => {
-    // Verificar si el capítulo está disponible (tiene progreso de lectura)
-    const chapterProgress = readingProgress.filter(
-      p => p.book_name === books.find(b => b.key === bookKey)?.name && 
-           p.chapter_number === chapterNumber && 
-           p.is_read
-    );
-    
-    if (chapterProgress.length === 0) {
-      // Capítulo no está leído, mostrar en blanco
-      setCurrentChapter(null);
-      setCurrentBook(bookKey);
-      setCurrentChapterNumber(chapterNumber);
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      const chapterData = await api.getChapter(bookKey, chapterNumber);
-      setCurrentChapter(chapterData);
-      setCurrentBook(bookKey);
-      setCurrentChapterNumber(chapterNumber);
-      setError(null);
-    } catch (err) {
-      console.error('Error loading chapter:', err);
-      setCurrentChapter(null);
-      setCurrentBook(bookKey);
-      setCurrentChapterNumber(chapterNumber);
-    } finally {
-      setLoading(false);
-    }
-  }, [readingProgress, books]);
-
+// Reemplaza la función loadChapter en BibliaInteractiva.tsx
+const loadChapter = useCallback(async (bookKey: string, chapterNumber: number) => {
+  console.log('🔍 Loading chapter:', bookKey, chapterNumber);
+  console.log('📊 Available progress:', readingProgress);
+  
+  // Verificar si el capítulo está disponible usando book_key en lugar de book_name
+  const chapterProgress = readingProgress.filter(
+    p => p.book_key === bookKey && 
+         p.chapter_number === chapterNumber && 
+         p.is_read
+  );
+  
+  console.log('✅ Chapter progress found:', chapterProgress);
+  
+  if (chapterProgress.length === 0) {
+    // Capítulo no está leído, mostrar en blanco
+    console.log('⚠️ Chapter not available');
+    setCurrentChapter(null);
+    setCurrentBook(bookKey);
+    setCurrentChapterNumber(chapterNumber);
+    return;
+  }
+  
+  try {
+    setLoading(true);
+    console.log('📖 Fetching chapter content...');
+    const chapterData = await api.getChapter(bookKey, chapterNumber);
+    console.log('📖 Chapter data received:', chapterData);
+    setCurrentChapter(chapterData);
+    setCurrentBook(bookKey);
+    setCurrentChapterNumber(chapterNumber);
+    setError(null);
+  } catch (err) {
+    console.error('❌ Error loading chapter:', err);
+    setCurrentChapter(null);
+    setCurrentBook(bookKey);
+    setCurrentChapterNumber(chapterNumber);
+  } finally {
+    setLoading(false);
+  }
+}, [readingProgress, books]);
   // Initial load
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+
+
+
 
   // Handle chapter selection
   const handleSelectChapter = useCallback((bookKey: string, chapter: number) => {
@@ -853,9 +902,12 @@ export default function BibliaInteractiva() {
       </div>
     );
   }
-
+const chapterStats = calculateChapterStats();
   return (
+      
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400 p-4">
+      {/* Filter Panel */}
+      const chapterStats = calculateChapterStats();
       {/* Filter Panel */}
       <FilterPanel
         currentReader={currentReader}
@@ -867,7 +919,9 @@ export default function BibliaInteractiva() {
         onRefresh={loadData}
         loading={loading}
         lastReadChapter={lastReadChapter}
+        chapterStats={chapterStats}   // 👈 ya la variable está lista
       />
+
 
       {/* Bible Container */}
       <div className="flex-1 flex items-center justify-center perspective-1000 mb-4">
@@ -963,10 +1017,10 @@ export default function BibliaInteractiva() {
         {/* Progress Info */}
         {stats && (
           <div className="text-center bg-blue-50 rounded-lg p-3">
-            <p className="text-blue-800 text-sm">
-              <strong>Progreso del Maratón:</strong> {stats.general.total_verses_read.toLocaleString()} versículos leídos 
-              ({Math.round((stats.general.total_verses_read / stats.general.total_verses) * 100)}% completado)
-            </p>
+            
+           <p className="font-medium">
+  Progreso del Maratón: {chapterStats.completedChapters} capítulos leídos ({chapterStats.percentage.toFixed(1)}% completado)
+</p>
             <p className="text-blue-600 text-xs mt-1">
               {getAvailableBooks.length} de {stats.general.total_books} libros disponibles
             </p>
