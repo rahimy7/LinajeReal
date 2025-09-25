@@ -1,32 +1,20 @@
 import { useState } from "react";
-import { Globe, Search, Menu, ChevronDown } from "lucide-react";
+import { Globe, Search, Menu, ChevronDown, Shield } from "lucide-react";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const handleAdminAccess = () => {
+    const password = prompt("Ingrese la contraseña de administrador:");
+    if (password === "LinajeMaraton7") {
+      window.location.href = "/admin";
+    } else {
+      alert("Contraseña incorrecta");
+    }
+  };
+
   return (
     <header className="bg-white shadow-sm">
-      {/* Top Bar */}
-   {/*    <div className="bg-gray-100 py-2">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-end space-x-4 text-sm text-gray-600">
-            <a href="#" className="hover:text-blue-600" data-testid="link-institucional">INSTITUCIONAL</a>
-            <a href="#" className="hover:text-blue-600" data-testid="link-noticias">NOTICIAS</a>
-            <a href="#" className="hover:text-blue-600" data-testid="link-videos">VIDEOS</a>
-            <a href="#" className="hover:text-blue-600" data-testid="link-downloads">DOWNLOADS</a>
-            <a href="#" className="hover:text-blue-600" data-testid="link-busqueda">
-              <Search className="inline w-4 h-4 mr-1" />
-              BÚSQUEDA
-            </a>
-            <a href="#" className="hover:text-blue-600 flex items-center" data-testid="link-language">
-              <Globe className="w-4 h-4 mr-1" />
-              ES
-              <ChevronDown className="w-3 h-3 ml-1" />
-            </a>
-          </div>
-        </div>
-      </div> */}
-
       {/* Main Navigation */}
       <nav className="bg-white border-b">
         <div className="container mx-auto px-4">
@@ -36,7 +24,7 @@ export default function Header() {
               <div className="w-12 h-12 flex items-center justify-center">
                 <img 
                   src="/images/logo.jpg" 
-                 alt="Iglesia Adventista del 7mo Día - Central Linaje Real"
+                  alt="Iglesia Adventista del 7mo Día - Central Linaje Real"
                   className="w-12 h-12 object-contain"
                   data-testid="logo-image"
                 />
@@ -93,13 +81,17 @@ export default function Header() {
                   <ChevronDown className="w-4 h-4" />
                 </button>
               </div>
-             {/*  <a 
-                href="https://www.feliz7play.com/" 
-                className="text-gray-700 hover:text-blue-600"
-                data-testid="nav-feliz7play"
+
+              {/* Admin Access Button */}
+              <button
+                onClick={handleAdminAccess}
+                className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                data-testid="admin-access"
+                title="Acceso Administrador"
               >
-                feliz7play.com
-              </a> */}
+                <Shield className="w-4 h-4 text-gray-600" />
+                <span className="text-gray-700">Admin</span>
+              </button>
             </div>
 
             {/* Mobile Menu Button */}
@@ -124,6 +116,15 @@ export default function Header() {
               <a href="/biblia" className="block text-gray-700">Maratón Bíblico</a>
               <a href="#" className="block text-gray-700">Sobre Nosotros</a>
               <a href="#" className="block text-gray-700">Proyecto de Construcción</a>
+              
+              {/* Admin Access for Mobile */}
+              <button
+                onClick={handleAdminAccess}
+                className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors w-full"
+              >
+                <Shield className="w-4 h-4 text-gray-600" />
+                <span className="text-gray-700">Administrador</span>
+              </button>
             </div>
           </div>
         </div>
