@@ -119,6 +119,48 @@ router.get('/readers/search/:name', asyncHandler(async (req: Request, res: Respo
   sendResponse(res, readers, `${readers.length} lectores encontrados`);
 }));
 
+router.get('/readers/top', asyncHandler(async (req: Request, res: Response) => {
+  const { limit = 10 } = req.query;
+  
+  const topReaders = await sql`
+    SELECT 
+      r.id,
+      r.name,
+      r.email,
+      r.avatar_color,
+      r.is_active,
+      COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END) as total_verses_read,
+      COUNT(DISTINCT CASE WHEN rp.is_read THEN v.chapter_id END) as total_chapters_read,
+      -- Calcular porcentaje basado en total de versículos de la Biblia
+      ROUND(
+        (COUNT(DISTINCT CASE WHEN rp.is_read THEN rp.verse_id END)::numeric / 31102) * 100, 2
+      ) as percentage_completed,
+      MAX(rp.read_at) as last_read_at,
+      -- Libros únicos leídos
+      COUNT(DISTINCT CASE WHEN rp.is_read THEN b.id END) as books_started,
+      -- Capítulos por día promedio (últimos 30 días)
+      COALESCE(
+        ROUND(
+          COUNT(DISTINCT CASE 
+            WHEN rp.is_read AND rp.read_at >= NOW() - INTERVAL '30 days' 
+            THEN DATE(rp.read_at) || '-' || v.chapter_id 
+          END)::numeric / 30, 2
+        ), 0
+      ) as chapters_per_day_avg
+    FROM readers r
+    LEFT JOIN reading_progress rp ON r.id = rp.reader_id
+    LEFT JOIN verses v ON rp.verse_id = v.id
+    LEFT JOIN chapters c ON v.chapter_id = c.id
+    LEFT JOIN books b ON c.book_id = b.id
+    WHERE r.is_active = true
+    GROUP BY r.id, r.name, r.email, r.avatar_color, r.is_active
+    ORDER BY total_chapters_read DESC, total_verses_read DESC
+    LIMIT ${parseInt(limit as string)}
+  `;
+  
+  sendResponse(res, topReaders, 'Top lectores obtenido exitosamente');
+}));
+
 // ==================== RUTAS DE PROGRESO ====================
 router.post('/progress', asyncHandler(async (req: Request, res: Response) => {
   const { reader_id, verse_id, is_read = true, notes } = req.body;

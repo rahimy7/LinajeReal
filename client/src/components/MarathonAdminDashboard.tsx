@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, Users, Activity, Settings, TrendingUp, BookOpen, 
   Clock, UserPlus, Search, Filter, Edit2, Trash2, Calendar,
-  CheckCircle, AlertCircle, RefreshCw, Download, Eye, EyeOff
+  CheckCircle, AlertCircle, RefreshCw, Download, Eye, EyeOff, X
 } from 'lucide-react';
 import ProgressManager from './ProgressManager';
 
@@ -11,11 +11,25 @@ interface Reader {
   id: number;
   name: string;
   email: string;
-  verses_read: number;
+  total_verses_read: number;
+  total_chapters_read: number;
   percentage_completed: number;
   is_active: boolean;
   last_activity: string;
   assigned_books?: string[];
+}
+
+interface TopReader {
+  id: number;
+  name: string;
+  email: string;
+  total_verses_read: number;
+  total_chapters_read: number;
+  percentage_completed: number;
+  is_active: boolean;
+  last_read_at: string;
+  books_started: number;
+  chapters_per_day_avg: number;
 }
 
 interface BibleStats {
@@ -23,16 +37,25 @@ interface BibleStats {
     total_readers: number;
     active_readers: number;
     total_verses_read: number;
+    total_chapters_read: number;
     completion_percentage: number;
     verses_remaining: number;
   };
   readers: Reader[];
   books: Array<{
-    name: string;
-    verses_read: number;
-    total_verses: number;
-    completion_percentage: number;
-  }>;
+  id: number;
+  key: string;
+  name: string;
+  testament: string;
+  order_index: number;
+  author: string;
+  description: string;
+  total_chapters: number;
+  chapters_completed: number;
+  verses_completed: number;
+  completion_percentage: number;
+}>;
+
 }
 
 interface ReaderModalProps {
@@ -46,11 +69,9 @@ const API_BASE = process.env.NODE_ENV === 'production'
   ? '/api/bible' 
   : 'http://localhost:5000/api/bible';
 
-
 const ReaderModal: React.FC<ReaderModalProps> = ({ reader, isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     is_active: true
   });
 
@@ -58,11 +79,10 @@ const ReaderModal: React.FC<ReaderModalProps> = ({ reader, isOpen, onClose, onSa
     if (reader) {
       setFormData({
         name: reader.name,
-        email: reader.email,
         is_active: reader.is_active
       });
     } else {
-      setFormData({ name: '', email: '', is_active: true });
+      setFormData({ name: '', is_active: true });
     }
   }, [reader, isOpen]);
 
@@ -90,19 +110,6 @@ const ReaderModal: React.FC<ReaderModalProps> = ({ reader, isOpen, onClose, onSa
               type="text"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email *
-            </label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
@@ -146,6 +153,7 @@ const ReaderModal: React.FC<ReaderModalProps> = ({ reader, isOpen, onClose, onSa
 const MarathonAdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState<BibleStats | null>(null);
+  const [topReaders, setTopReaders] = useState<TopReader[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -154,10 +162,94 @@ const MarathonAdminDashboard: React.FC = () => {
   const [editingReader, setEditingReader] = useState<Reader | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterActive, setFilterActive] = useState<boolean | null>(null);
+  
+  // Estados para gestión de capítulos
+  const [showChaptersModal, setShowChaptersModal] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<any>(null);
+  const [readerName, setReaderName] = useState('');
+  const [readerSuggestions, setReaderSuggestions] = useState<any[]>([]);
+  const [completedChapters, setCompletedChapters] = useState<number[]>([]);
 
-  useEffect(() => {
-    loadStats();
-  }, []);
+  // Función para cargar capítulos completados por libro
+  const loadCompletedChapters = async (bookKey: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/progress/all`);
+      if (response.ok) {
+        const data = await response.json();
+        const bookProgress = data.data.filter(
+          (progress: any) => progress.book_key === bookKey
+        );
+        
+        const completed = [...new Set(
+          bookProgress.map((p: any) => p.chapter_number)
+        )];
+        
+        setCompletedChapters(completed);
+      }
+    } catch (error) {
+      console.error('Error loading completed chapters:', error);
+      setCompletedChapters([]);
+    }
+  };
+  const searchReaders = async (query: string) => {
+    if (query.length < 2) {
+      setReaderSuggestions([]);
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${API_BASE}/readers/search/${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setReaderSuggestions(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error searching readers:', error);
+    }
+  };
+
+  // Función para marcar capítulo como completado
+  const markChapterCompleted = async (bookKey: string, chapterNumber: number, readerName: string) => {
+    if (!confirm(`¿Estás seguro de marcar el capítulo ${chapterNumber} de ${selectedBook?.name} como completado para ${readerName}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/progress/chapter`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reader_name: readerName,
+          book_key: bookKey,
+          chapter_number: chapterNumber
+        })
+      });
+
+      if (response.ok) {
+        await loadStats();
+        await loadCompletedChapters(bookKey); // Recargar capítulos completados
+        
+       
+      } else {
+        throw new Error('Error al marcar capítulo');
+      }
+    } catch (error) {
+      alert('Error al marcar el capítulo como completado');
+    }
+  };
+  const loadTopReaders = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/readers/top?limit=5`);
+      if (response.ok) {
+        const data = await response.json();
+        setTopReaders(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error loading top readers:', error);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -168,6 +260,7 @@ const MarathonAdminDashboard: React.FC = () => {
         const data = await response.json();
         setStats(data.data);
         setError(null);
+        await loadTopReaders();
       } else {
         throw new Error('Error al cargar datos');
       }
@@ -177,6 +270,10 @@ const MarathonAdminDashboard: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadStats();
+  }, []);
 
   const handleSaveReader = async (readerData: Partial<Reader>) => {
     try {
@@ -195,7 +292,7 @@ const MarathonAdminDashboard: React.FC = () => {
       });
 
       if (response.ok) {
-        await loadStats(); // Recargar datos
+        await loadStats();
         setEditingReader(null);
       } else {
         throw new Error('Error al guardar lector');
@@ -241,12 +338,22 @@ const MarathonAdminDashboard: React.FC = () => {
     }
   };
 
-  const filteredReaders = stats?.readers?.filter(reader => {
+  // Combinar datos de stats y topReaders para tener datos completos
+  const combinedReaders = stats?.readers?.map(reader => {
+    const topReaderData = topReaders.find(tr => tr.id === reader.id);
+    return {
+      ...reader,
+      total_chapters_read: topReaderData?.total_chapters_read || 0,
+      percentage_completed: topReaderData?.percentage_completed || 0
+    };
+  }) || [];
+
+  const filteredReaders = combinedReaders.filter(reader => {
     const matchesSearch = reader.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          reader.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterActive === null || reader.is_active === filterActive;
     return matchesSearch && matchesFilter;
-  }) || [];
+  });
 
   const tabs = [
     { id: 'overview', label: 'Resumen', icon: BarChart3 },
@@ -408,38 +515,37 @@ const MarathonAdminDashboard: React.FC = () => {
             {/* Top Readers */}
             <div className="bg-white rounded-lg shadow">
               <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Top Lectores</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Top Lectores (Base de Datos)</h3>
               </div>
               <div className="p-6">
                 <div className="space-y-4">
-                  {stats.readers
-                    ?.sort((a, b) => (b.verses_read || 0) - (a.verses_read || 0))
-                    .slice(0, 5)
-                    .map((reader, index) => (
-                      <div key={reader.id} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${
-                            index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-500' : 'bg-blue-500'
-                          }`}>
-                            {index + 1}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{reader.name}</p>
-                            <p className="text-sm text-gray-500">{reader.email || 'Sin email'}</p>
-                          </div>
+                  {topReaders.slice(0, 5).map((reader, index) => (
+                    <div key={reader.id} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${
+                          index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                        }`}>
+                          {index + 1}
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium text-gray-900">
-                            {reader.total_chapters_read || 0} capítulos
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {Math.round(reader.percentage_completed || 0)}% completado
-                          </p>
+                        <div>
+                          <p className="font-medium text-gray-900">{reader.name}</p>
+                          <p className="text-sm text-gray-500">{reader.email || 'Sin email'}</p>
                         </div>
                       </div>
-                    ))}
-                  {(!stats.readers || stats.readers.length === 0) && (
-                    <p className="text-gray-500 text-center py-4">No hay datos de lectores</p>
+                      <div className="text-right">
+                        <p className="font-medium text-gray-900">
+                          {reader.total_chapters_read} capítulos
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {parseFloat(reader.percentage_completed.toString()).toFixed(1)}% completado
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {(!topReaders || topReaders.length === 0) && (
+                    <p className="text-gray-500 text-center py-4">
+                      No hay lectores activos
+                    </p>
                   )}
                 </div>
               </div>
@@ -547,7 +653,7 @@ const MarathonAdminDashboard: React.FC = () => {
                                 ></div>
                               </div>
                               <div className="text-xs text-gray-500 mt-1">
-                                {Math.round(reader.percentage_completed || 0)}% completado
+                                {parseFloat((reader.percentage_completed || 0).toString()).toFixed(1)}% completado
                               </div>
                             </div>
                           </div>
@@ -616,7 +722,7 @@ const MarathonAdminDashboard: React.FC = () => {
               <p className="text-gray-600">Selecciona libro, capítulo y lector para marcar como completado</p>
             </div>
             
-           <ProgressManager onProgressUpdate={loadStats} />
+            <ProgressManager onProgressUpdate={loadStats} />
           </div>
         )}
 
@@ -625,18 +731,26 @@ const MarathonAdminDashboard: React.FC = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Progreso por Libros</h2>
-              <p className="text-gray-600">Estado de lectura de cada libro bíblico</p>
+              <p className="text-gray-600">Selecciona un libro para ver capítulos y marcar como completados</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {stats.books?.map((book) => (
-                <div key={book.name} className="bg-white rounded-lg shadow p-6">
+                <div key={book.name} className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                     onClick={() => {
+                       setSelectedBook(book);
+                       setShowChaptersModal(true);
+                       loadCompletedChapters(book.key);
+                     }}>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{book.name}</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Versículos leídos</span>
-                      <span className="font-medium">{book.verses_read || 0}/{book.total_verses}</span>
-                    </div>
+  <span className="text-gray-500">Capítulos leídos</span>
+  <span className="font-medium">
+    {book.chapters_completed || 0}/{book.total_chapters || 0}
+  </span>
+</div>
+
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-green-600 h-2 rounded-full transition-all duration-300"
@@ -672,17 +786,6 @@ const MarathonAdminDashboard: React.FC = () => {
                     <h4 className="font-medium text-gray-900">Exportar Datos</h4>
                     <p className="text-sm text-gray-500">Descargar reporte completo del maratón</p>
                   </div>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                    <Download className="w-4 h-4" />
-                    Exportar
-                  </button>
-                </div>
-                
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium text-gray-900">Reiniciar Maratón</h4>
-                    <p className="text-sm text-gray-500">Borrar todo el progreso y comenzar de nuevo</p>
-                  </div>
                   <button className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
                     <RefreshCw className="w-4 h-4" />
                     Reiniciar
@@ -704,6 +807,143 @@ const MarathonAdminDashboard: React.FC = () => {
         }}
         onSave={handleSaveReader}
       />
+
+      {/* Chapters Modal */}
+      {showChaptersModal && selectedBook && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Capítulos de {selectedBook.name}
+                </h3>
+                <button
+                  onClick={() => setShowChaptersModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              
+              {/* Reader Input */}
+              <div className="mt-4 relative">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nombre del Lector
+                </label>
+                <input
+                  type="text"
+                  value={readerName}
+                  onChange={(e) => {
+                    setReaderName(e.target.value);
+                    searchReaders(e.target.value);
+                  }}
+                  placeholder="Escribe el nombre del lector..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                
+                {/* Reader Suggestions */}
+                {readerSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {readerSuggestions.map((reader) => (
+                      <button
+                        key={reader.id}
+                        onClick={() => {
+                          setReaderName(reader.name);
+                          setReaderSuggestions([]);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="font-medium text-gray-900">{reader.name}</div>
+                        {reader.email && (
+                          <div className="text-sm text-gray-500">{reader.email}</div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {/* Stats */}
+              <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+                <div className="flex justify-between text-sm">
+                  <span>Capítulos completados: <strong>{completedChapters.length}</strong></span>
+                  <span>Capítulos pendientes: <strong>{(selectedBook.total_chapters || 0) - completedChapters.length}</strong></span>
+                </div>
+              </div>
+              
+              {/* Show completed chapters */}
+              {completedChapters.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-green-700 mb-2">Capítulos Completados:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {completedChapters.sort((a, b) => a - b).map((chapterNum) => (
+                      <span key={chapterNum} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                        Cap. {chapterNum}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Pending chapters grid */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Capítulos Pendientes:</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {Array.from({ length: selectedBook.total_chapters || 50 }, (_, i) => i + 1)
+                    .filter(chapterNum => !completedChapters.includes(chapterNum))
+                    .map((chapterNum) => (
+                    <div key={chapterNum} className="border rounded-lg p-4 bg-orange-50 border-orange-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-gray-900">
+                          Cap. {chapterNum}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={`chapter-${chapterNum}`}
+                          disabled={!readerName.trim()}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              markChapterCompleted(selectedBook.key, chapterNum, readerName.trim());
+                              e.target.checked = false; // Reset checkbox after action
+                            }
+                          }}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
+                        />
+                        <label 
+                          htmlFor={`chapter-${chapterNum}`}
+                          className={`text-sm ${!readerName.trim() ? 'text-gray-400' : 'text-gray-700 cursor-pointer'}`}
+                        >
+                          Completado
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {Array.from({ length: selectedBook.total_chapters || 50 }, (_, i) => i + 1)
+                  .filter(chapterNum => !completedChapters.includes(chapterNum)).length === 0 && (
+                  <div className="text-center py-8 text-green-600">
+                    <CheckCircle className="w-12 h-12 mx-auto mb-2" />
+                    <p className="font-semibold">¡Libro completado!</p>
+                    <p className="text-sm">Todos los capítulos han sido leídos.</p>
+                  </div>
+                )}
+              </div>
+              
+              {!readerName.trim() && (
+                <div className="mt-4 text-center text-gray-500 text-sm">
+                  Ingresa el nombre de un lector para habilitar las casillas
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

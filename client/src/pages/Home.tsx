@@ -77,13 +77,9 @@ export default function Home() {
         <DownloadsSection />
         <CallToAction />
 
-        <MarathonFloatingWidget
-        readingProgress={mockReadingProgress}
-        currentBook="genesis"
-        currentChapter={15}
-        position="bottom-right"
-        theme="default"
-      />
+       <MarathonFloatingWidget
+   
+/>
       </main>
       <Footer />
     </div>
