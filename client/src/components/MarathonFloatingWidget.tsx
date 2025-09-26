@@ -6,32 +6,32 @@ const API_BASE = process.env.NODE_ENV === 'production'
   ? '/api/bible' 
   : 'http://localhost:5000/api/bible';
 
-// Interfaces
+// Interfaces corregidas según el endpoint
 interface RealStats {
   general: {
     total_books: number;
-    total_readers: number;
-    active_readers: number;
-    total_chapters_read: number;
-    completion_percentage: number;
-  };
-  readers: Array<{
-    id: number;
-    name: string;
-    total_chapters_read: number;
-    is_active: boolean;
-  }>;
-  books: Array<{
-    id: number;
-    key: string;
-    name: string;
-    completion_percentage: number;
+    total_chapters: number;
     chapters_completed: number;
-  }>;
-  marathon: {
-    start_time: string;
-    is_active: boolean;
+    completion_percentage: number;
+    active_readers: number;
+    readers_with_progress: number;
+    books_with_progress: number;
+    avg_reading_time_minutes: number;
+    first_reading: string;
+    last_reading: string;
   };
+  books: Array<{
+    book_id: number;
+    book_key: string;
+    book_name: string;
+    testament: string;
+    order_index: number;
+    total_chapters: number;
+    chapters_created: string;
+    chapters_completed: string;
+    unique_readers: string;
+    completion_percentage: string;
+  }>;
 }
 
 // Componente de Widget Flotante del Maratón
@@ -39,11 +39,13 @@ const MarathonFloatingWidget = ({
   position = 'bottom-right',
   youtubeVideoId = 'dQw4w9WgXcQ'
 }) => {
-  const [widgetState, setWidgetState] = useState('minimized');
+  const [widgetState, setWidgetState] = useState('expanded');
   const [timer, setTimer] = useState('');
   const [realStats, setRealStats] = useState<RealStats | null>(null);
   const [loading, setLoading] = useState(true);
-   const memoizedIframe = useMemo(() => (
+  const [marathonStartTime, setMarathonStartTime] = useState<string | null>(null);
+
+  const memoizedIframe = useMemo(() => (
     <iframe
       src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&mute=1`}
       title="YouTube video player"
@@ -68,12 +70,18 @@ const MarathonFloatingWidget = ({
       const response = await fetch(`${API_BASE}/stats?t=${Date.now()}`);
       if (response.ok) {
         const data = await response.json();
-        if (data.data) {
+        console.log('📊 Datos recibidos:', data); // Debug
+        if (data.success && data.data) {
           setRealStats(data.data);
+          
+          // Usar first_reading como inicio del maratón si no hay otro dato
+          if (data.data.general?.first_reading && !marathonStartTime) {
+            setMarathonStartTime(data.data.general.first_reading);
+          }
         }
       }
     } catch (error) {
-      console.error('Error loading real stats:', error);
+      console.error('❌ Error loading real stats:', error);
     } finally {
       setLoading(false);
     }
@@ -91,11 +99,11 @@ const MarathonFloatingWidget = ({
     return () => clearInterval(interval);
   }, [widgetState]);
 
-  // Timer del maratón - NO depende de realStats para evitar reiniciar
+  // Timer del maratón usando first_reading como inicio
   useEffect(() => {
-    if (!realStats?.marathon?.start_time) return;
+    if (!marathonStartTime) return;
 
-    const startTime = new Date(realStats.marathon.start_time);
+    const startTime = new Date(marathonStartTime);
     
     const updateTimer = () => {
       const now = new Date();
@@ -120,7 +128,7 @@ const MarathonFloatingWidget = ({
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [realStats?.marathon?.start_time]); // Solo depende del start_time, no de todo realStats
+  }, [marathonStartTime]);
 
   if (loading) {
     return (
@@ -132,12 +140,13 @@ const MarathonFloatingWidget = ({
     );
   }
 
+  // Usar los datos correctos del endpoint
   const completionPercentage = realStats?.general?.completion_percentage || 0;
-  const totalChaptersRead = realStats?.general?.total_chapters_read || 0;
-  const activeReaders = realStats?.readers?.filter(r => r.is_active) || [];
-  const totalReaders = realStats?.general?.total_readers || 0;
-  const booksCompleted = realStats?.books?.filter(b => b.completion_percentage >= 100).length || 0;
+  const totalChaptersRead = realStats?.general?.chapters_completed || 0;
+  const activeReaders = realStats?.general?.active_readers || 0;
+  const booksCompleted = realStats?.books?.filter(b => parseFloat(b.completion_percentage) >= 100).length || 0;
   const totalBooks = realStats?.general?.total_books || 66;
+  const totalChapters = realStats?.general?.total_chapters || 1189;
 
   // SVG del círculo de progreso
   const radius = widgetState === 'minimized' ? 28 : 65;
@@ -148,7 +157,7 @@ const MarathonFloatingWidget = ({
   const MinimizedView = () => {
     const handleCircleClick = (e) => {
       e.stopPropagation();
-      setWidgetState('expanded'); // Saltar directamente a expandido
+      setWidgetState('expanded');
     };
 
     const handleVideoClick = (e) => {
@@ -186,7 +195,7 @@ const MarathonFloatingWidget = ({
             </span>
           </div>
           
-          {activeReaders.length > 0 && (
+          {activeReaders > 0 && (
             <div className="absolute -top-1 -right-1 bg-green-500 rounded-full w-3 h-3 animate-pulse" />
           )}
         </div>
@@ -215,7 +224,7 @@ const MarathonFloatingWidget = ({
     );
   };
 
-  // Vista expandida (sin vista compacta intermedia)
+  // Vista expandida
   const ExpandedView = () => (
     <div className="bg-gradient-to-br from-stone-100 to-stone-200 rounded-2xl shadow-2xl p-6 w-80 border border-stone-300">
       <div className="flex items-center justify-between mb-4">
@@ -281,35 +290,18 @@ const MarathonFloatingWidget = ({
             <FileText className="w-4 h-4" /> Capítulos Completados
           </span>
           <span className="text-green-700 font-bold">
-            {totalChaptersRead}/1189
+            {totalChaptersRead}/{totalChapters}
           </span>
+        </div>
+        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+          <span className="flex items-center gap-2 text-sm text-stone-600">
+            <Users className="w-4 h-4" /> Lectores Activos
+          </span>
+          <span className="text-purple-700 font-bold">{activeReaders}</span>
         </div>
       </div>
 
-      <div className="p-3 bg-white/50 rounded-lg">
-        <div className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1">
-          <Users className="w-3 h-3" /> Participantes Activos ({activeReaders.length})
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {activeReaders
-            .sort((a, b) => (b.total_chapters_read || 0) - (a.total_chapters_read || 0))
-            .slice(0, 8)
-            .map(reader => (
-            <span 
-              key={reader.id}
-              className="px-2 py-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full text-[10px] font-medium capitalize"
-              title={`${reader.name}: ${reader.total_chapters_read} capítulos`}
-            >
-              {reader.name}
-            </span>
-          ))}
-          {activeReaders.length > 8 && (
-            <span className="px-2 py-1 bg-gray-400 text-white rounded-full text-[10px] font-medium">
-              +{activeReaders.length - 8}
-            </span>
-          )}
-        </div>
-      </div>
+    
     </div>
   );
 
@@ -333,7 +325,6 @@ const MarathonFloatingWidget = ({
       </div>
 
       <div className="relative aspect-video bg-gray-800">
-        {/* Simulación de video mientras carga */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-white text-sm">Cargando transmisión...</div>
         </div>
@@ -346,12 +337,12 @@ const MarathonFloatingWidget = ({
             <span className="text-red-500 font-bold">● LIVE</span> Maratón Bíblico
           </div>
           <div className="text-gray-400">
-            {activeReaders.length} participantes
+            {activeReaders} participantes
           </div>
         </div>
         
         <div className="mt-2 text-xs text-gray-400">
-          Progreso: {Math.floor(completionPercentage)}% - {totalChaptersRead}/1,189 capítulos
+          Progreso: {Math.floor(completionPercentage)}% - {totalChaptersRead}/{totalChapters} capítulos
         </div>
       </div>
     </div>
