@@ -55,7 +55,7 @@ export default function Header() {
               </div>
               <div className="relative group">
                 <a 
-                  href="/biblia" 
+                  // href="/biblia" 
                   className="text-gray-700 hover:text-blue-600 flex items-center space-x-1"
                   data-testid="nav-maraton"
                 >

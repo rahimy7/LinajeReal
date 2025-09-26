@@ -4,20 +4,7 @@ export default function Footer() {
   return (
     <footer className="bg-adventist-blue-900 text-white py-12">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg 
-              className="w-8 h-8 text-adventist-blue-900" 
-              fill="currentColor" 
-              viewBox="0 0 24 24"
-              data-testid="footer-logo"
-            >
-              <path d="M12 2L3 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-9-5z"/>
-            </svg>
-          </div>
-          <h3 className="text-xl font-bold">Iglesia Adventista del Séptimo Día</h3>
-          <p className="text-blue-200">Asociación Central Dominicana</p>
-        </div>
+        
         
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div>
