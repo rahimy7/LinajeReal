@@ -6,8 +6,8 @@ export default function Header() {
 
   const handleAdminAccess = () => {
     const password = prompt("Ingrese la contraseña de administrador:");
-    if (password === "LinajeMaraton7") {
-      window.location.href = "/admin";
+    if (password === "LinajeReal") {
+      window.location.href = "/admin/dashboard";
     } else {
       alert("Contraseña incorrecta");
     }
