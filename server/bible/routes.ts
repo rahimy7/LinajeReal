@@ -108,7 +108,7 @@ router.get('/readers/:readerId/progress', asyncHandler(async (req: Request, res:
     return sendResponse(res, null, 'ID de lector inválido', 400);
   }
   
-  const progress = await BibleModel.getChapterReadings(undefined, parseInt(readerId));
+  const progress = await BibleModel.getChapterReadings();
   sendResponse(res, progress, `Progreso del lector obtenido exitosamente`);
 }));
 
@@ -210,7 +210,7 @@ router.get('/chapters/:chapterId/readings', asyncHandler(async (req: Request, re
     return sendResponse(res, null, 'ID de capítulo inválido', 400);
   }
   
-  const readings = await BibleModel.getChapterReadings(parseInt(chapterId));
+  const readings = await BibleModel.getChapterReadings();
   sendResponse(res, readings, 'Lecturas del capítulo obtenidas exitosamente');
 }));
 
@@ -275,6 +275,175 @@ router.get('/available-books', asyncHandler(async (req: Request, res: Response) 
 router.get('/progress/all', asyncHandler(async (req: Request, res: Response) => {
   const allProgress = await BibleModel.getChapterReadings();
   sendResponse(res, allProgress, 'Todo el progreso de lectura obtenido');
+}));
+
+// Agregar después de las otras rutas de progreso
+router.post('/progress/chapter', asyncHandler(async (req: Request, res: Response) => {
+  const { reader_name, book_key, chapter_number, notes } = req.body;
+  
+  if (!reader_name || !book_key || !chapter_number) {
+    return sendResponse(res, null, 'reader_name, book_key y chapter_number son requeridos', 400);
+  }
+  
+  try {
+    // Buscar o crear el lector
+    let reader = await BibleModel.getReaderByName(reader_name);
+    
+    if (!reader) {
+      // Crear nuevo lector si no existe
+      reader = await BibleModel.createReader({
+        name: reader_name.trim(),
+        email: undefined,
+        avatar_color: '#' + Math.floor(Math.random()*16777215).toString(16),
+        is_active: true,
+        reading_speed_wpm: 200
+      });
+      
+      if (!reader) {
+        return sendResponse(res, null, 'Error al crear lector', 500);
+      }
+    }
+    
+    // Marcar el capítulo como leído
+    const success = await BibleModel.markChapterAsReadByBookKey(
+      book_key,
+      parseInt(chapter_number.toString()),
+      reader.id,
+      notes || `Marcado desde admin - ${new Date().toLocaleDateString()}`,
+      undefined
+    );
+    
+    if (success) {
+      sendResponse(res, { 
+        success: true,
+        reader_id: reader.id,
+        message: `Capítulo ${book_key} ${chapter_number} marcado exitosamente para ${reader_name}`
+      }, 'Capítulo marcado exitosamente');
+    } else {
+      sendResponse(res, { success: false }, 'Error al marcar capítulo', 400);
+    }
+  } catch (error) {
+    console.error('Error en /progress/chapter:', error);
+    sendResponse(res, null, 'Error al procesar la solicitud', 500);
+  }
+}));
+
+router.post('/progress/chapter', asyncHandler(async (req: Request, res: Response) => {
+  const { reader_name, book_key, chapter_number, notes } = req.body;
+  
+  // Validación de parámetros requeridos
+  if (!reader_name || !book_key || !chapter_number) {
+    return sendResponse(res, null, 'reader_name, book_key y chapter_number son requeridos', 400);
+  }
+  
+  try {
+    // Buscar el lector por nombre
+    const reader = await BibleModel.getReaderByName(reader_name);
+    
+    if (!reader) {
+      // Si no existe, crear un nuevo lector
+      const newReader = await BibleModel.createReader({
+        name: reader_name.trim(),
+        email: undefined,
+        avatar_color: '#' + Math.floor(Math.random()*16777215).toString(16),
+        is_active: true,
+        reading_speed_wpm: 200
+      });
+      
+      if (!newReader) {
+        return sendResponse(res, null, 'Error al crear lector', 500);
+      }
+      
+      // Usar el ID del nuevo lector
+      const success = await BibleModel.markChapterAsReadByBookKey(
+        book_key,
+        parseInt(chapter_number.toString()),
+        newReader.id,
+        notes || `Marcado desde admin - ${new Date().toLocaleDateString()}`,
+        undefined
+      );
+      
+      if (success) {
+        sendResponse(res, { 
+          success: true, 
+          reader_id: newReader.id,
+          message: `Capítulo ${book_key} ${chapter_number} marcado exitosamente para ${reader_name} (nuevo lector)`
+        }, 'Capítulo marcado exitosamente', 201);
+      } else {
+        sendResponse(res, { success: false }, 'Error al marcar capítulo', 400);
+      }
+    } else {
+      // Usar el lector existente
+      const success = await BibleModel.markChapterAsReadByBookKey(
+        book_key,
+        parseInt(chapter_number.toString()),
+        reader.id,
+        notes || `Marcado desde admin - ${new Date().toLocaleDateString()}`,
+        undefined
+      );
+      
+      if (success) {
+        sendResponse(res, { 
+          success: true,
+          reader_id: reader.id,
+          message: `Capítulo ${book_key} ${chapter_number} marcado exitosamente para ${reader_name}`
+        }, 'Capítulo marcado exitosamente');
+      } else {
+        sendResponse(res, { success: false }, 'Error al marcar capítulo', 400);
+      }
+    }
+  } catch (error) {
+    console.error('Error en /progress/chapter:', error);
+    sendResponse(res, null, 'Error al procesar la solicitud', 500);
+  }
+}));
+
+// Agregar este endpoint en server/bible/routes.ts después del endpoint /progress/chapter
+
+// ==================== ENDPOINT PARA DESMARCAR CAPÍTULOS ====================
+router.delete('/progress/chapter', asyncHandler(async (req: Request, res: Response) => {
+  const { reader_name, book_key, chapter_number } = req.body;
+  
+  // Validación de parámetros
+  if (!reader_name || !book_key || !chapter_number) {
+    return sendResponse(res, null, 'reader_name, book_key y chapter_number son requeridos', 400);
+  }
+  
+  try {
+    // Buscar el lector
+    const reader = await BibleModel.getReaderByName(reader_name);
+    
+    if (!reader) {
+      return sendResponse(res, null, `Lector "${reader_name}" no encontrado`, 404);
+    }
+    
+    // Verificar que el capítulo existe
+    const exists = await BibleModel.validateChapterExists(book_key, parseInt(chapter_number));
+    if (!exists) {
+      return sendResponse(res, null, `Capítulo ${book_key} ${chapter_number} no encontrado`, 404);
+    }
+    
+    // Resetear el progreso del capítulo para este lector
+    // Necesitamos agregar este método en BibleModel
+    const success = await BibleModel.unmarkChapterForReader(
+      book_key,
+      parseInt(chapter_number),
+      reader.id
+    );
+    
+    if (success) {
+      sendResponse(res, { 
+        success: true,
+        message: `Capítulo ${book_key} ${chapter_number} desmarcado para ${reader_name}`
+      }, 'Capítulo desmarcado exitosamente');
+    } else {
+      sendResponse(res, null, 'Error al desmarcar capítulo', 400);
+    }
+    
+  } catch (error) {
+    console.error('Error en DELETE /progress/chapter:', error);
+    sendResponse(res, null, 'Error al desmarcar capítulo', 500);
+  }
 }));
 
 router.get('/progress/chapter/:bookKey/:chapterNum', asyncHandler(async (req: Request, res: Response) => {
@@ -342,5 +511,77 @@ router.use((error: any, req: Request, res: Response, next: NextFunction) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// Agregar este endpoint en server/bible/routes.ts después de las otras rutas de progreso
+
+// ==================== RUTA DE PROGRESO POR CAPÍTULO ====================
+router.post('/progress/chapter', asyncHandler(async (req: Request, res: Response) => {
+  const { reader_name, book_key, chapter_number, notes } = req.body;
+  
+  // Validación de parámetros requeridos
+  if (!reader_name || !book_key || !chapter_number) {
+    return sendResponse(res, null, 'reader_name, book_key y chapter_number son requeridos', 400);
+  }
+  
+  try {
+    // Buscar el lector por nombre
+    const reader = await BibleModel.getReaderByName(reader_name);
+    if (!reader) {
+      // Si no existe, crear un nuevo lector
+      const newReader = await BibleModel.createReader({
+        name: reader_name.trim(),
+        email: undefined,
+        avatar_color: '#' + Math.floor(Math.random()*16777215).toString(16),
+        is_active: true,
+        reading_speed_wpm: 200
+      });
+      
+      if (!newReader) {
+        return sendResponse(res, null, 'Error al crear lector', 500);
+      }
+      
+      // Usar el ID del nuevo lector
+      const success = await BibleModel.markChapterAsReadByBookKey(
+        book_key,
+        parseInt(chapter_number.toString()),
+        newReader.id,
+        notes || `Marcado desde admin - ${new Date().toLocaleDateString()}`,
+        undefined
+      );
+      
+      if (success) {
+        sendResponse(res, { 
+          success: true, 
+          reader_id: newReader.id,
+          message: `Capítulo ${book_key} ${chapter_number} marcado exitosamente para ${reader_name} (nuevo lector)`
+        }, 'Capítulo marcado exitosamente', 201);
+      } else {
+        sendResponse(res, { success: false }, 'Error al marcar capítulo', 400);
+      }
+    } else {
+      // Usar el lector existente
+      const success = await BibleModel.markChapterAsReadByBookKey(
+        book_key,
+        parseInt(chapter_number.toString()),
+        reader.id,
+        notes || `Marcado desde admin - ${new Date().toLocaleDateString()}`,
+        undefined
+      );
+      
+      if (success) {
+        sendResponse(res, { 
+          success: true,
+          reader_id: reader.id,
+          message: `Capítulo ${book_key} ${chapter_number} marcado exitosamente para ${reader_name}`
+        }, 'Capítulo marcado exitosamente');
+      } else {
+        sendResponse(res, { success: false }, 'Error al marcar capítulo', 400);
+      }
+    }
+  } catch (error) {
+    console.error('Error en /progress/chapter:', error);
+    sendResponse(res, null, 'Error al procesar la solicitud', 500);
+  }
+}));
 
 export default router;

@@ -135,61 +135,115 @@ export class BibleModel {
     }
   }
 
-  static async getChapterReadings(chapterId?: number, readerId?: number) {
+ static async getChapterReadings() {
     try {
-      let query;
+      const readings = await sql`
+        SELECT 
+          b.id AS book_id,
+          b.key AS book_key,
+          b.name AS book_name,
+          c.id AS chapter_id,
+          c.chapter_number,
+          c.is_completed,
+          c.completed_at,
+          c.reading_notes,
+          c.reading_duration_minutes,
+          r.id AS reader_id,
+          r.name AS reader_name,
+          r.avatar_color
+        FROM chapters c
+        JOIN books b ON c.book_id = b.id
+        LEFT JOIN readers r ON c.read_by_reader_id = r.id
+        ORDER BY b.id, c.chapter_number
+      `;
       
-      if (chapterId && readerId) {
-        query = sql`
-          SELECT cr.*, r.name as reader_name, r.avatar_color,
-                 b.name as book_name, b.key as book_key, c.chapter_number
-          FROM chapter_readings cr
-          JOIN readers r ON cr.reader_id = r.id
-          JOIN chapters c ON cr.chapter_id = c.id
-          JOIN books b ON c.book_id = b.id
-          WHERE cr.chapter_id = ${chapterId} AND cr.reader_id = ${readerId}
-        `;
-      } else if (chapterId) {
-        query = sql`
-          SELECT cr.*, r.name as reader_name, r.avatar_color,
-                 b.name as book_name, b.key as book_key, c.chapter_number
-          FROM chapter_readings cr
-          JOIN readers r ON cr.reader_id = r.id
-          JOIN chapters c ON cr.chapter_id = c.id
-          JOIN books b ON c.book_id = b.id
-          WHERE cr.chapter_id = ${chapterId}
-          ORDER BY cr.completed_at DESC
-        `;
-      } else if (readerId) {
-        query = sql`
-          SELECT cr.*, r.name as reader_name, r.avatar_color,
-                 b.name as book_name, b.key as book_key, c.chapter_number
-          FROM chapter_readings cr
-          JOIN readers r ON cr.reader_id = r.id
-          JOIN chapters c ON cr.chapter_id = c.id
-          JOIN books b ON c.book_id = b.id
-          WHERE cr.reader_id = ${readerId}
-          ORDER BY b.order_index, c.chapter_number
-        `;
-      } else {
-        query = sql`
-          SELECT cr.*, r.name as reader_name, r.avatar_color,
-                 b.name as book_name, b.key as book_key, c.chapter_number
-          FROM chapter_readings cr
-          JOIN readers r ON cr.reader_id = r.id
-          JOIN chapters c ON cr.chapter_id = c.id
-          JOIN books b ON c.book_id = b.id
-          ORDER BY cr.completed_at DESC
-          LIMIT 100
-        `;
-      }
-
-      return await query;
+      return readings;
     } catch (error) {
-      console.error('Error obteniendo lecturas de capítulos:', error);
+      console.error('Error obteniendo todo el progreso de lectura:', error);
       throw error;
     }
   }
+
+
+  // Agregar este método en server/bible/models.ts dentro de la clase BibleModel
+
+static async unmarkChapterForReader(
+  bookKey: string,
+  chapterNumber: number,
+  readerId: number
+): Promise<boolean> {
+  try {
+    // Primero obtener el chapter_id
+    const chapterResult = await sql`
+      SELECT c.id 
+      FROM chapters c
+      JOIN books b ON c.book_id = b.id
+      WHERE b.key = ${bookKey} AND c.chapter_number = ${chapterNumber}
+    `;
+
+    if (chapterResult.length === 0) {
+      console.error(`Capítulo ${bookKey} ${chapterNumber} no encontrado`);
+      return false;
+    }
+
+    const chapterId = chapterResult[0].id;
+    
+    // Eliminar el registro de chapter_readings para este lector
+    await sql`
+      DELETE FROM chapter_readings 
+      WHERE chapter_id = ${chapterId} AND reader_id = ${readerId}
+    `;
+    
+    // Verificar si hay otros lectores que hayan leído este capítulo
+    const otherReadings = await sql`
+      SELECT COUNT(*) as count 
+      FROM chapter_readings 
+      WHERE chapter_id = ${chapterId} AND is_completed = true
+    `;
+    
+    // Si no hay otros lectores, actualizar el capítulo como no completado
+    if (parseInt(otherReadings[0].count) === 0) {
+      await sql`
+        UPDATE chapters 
+        SET 
+          is_completed = false,
+          completed_at = NULL,
+          read_by_reader_id = NULL,
+          reading_notes = NULL,
+          reading_duration_minutes = NULL,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${chapterId}
+      `;
+    } else {
+      // Si hay otros lectores, mantener el capítulo como completado
+      // pero posiblemente actualizar el read_by_reader_id al último lector
+      const lastReader = await sql`
+        SELECT reader_id 
+        FROM chapter_readings 
+        WHERE chapter_id = ${chapterId} AND is_completed = true
+        ORDER BY completed_at DESC
+        LIMIT 1
+      `;
+      
+      if (lastReader.length > 0) {
+        await sql`
+          UPDATE chapters 
+          SET 
+            read_by_reader_id = ${lastReader[0].reader_id},
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${chapterId}
+        `;
+      }
+    }
+    
+    console.log(`✅ Capítulo ${bookKey} ${chapterNumber} desmarcado para lector ID ${readerId}`);
+    return true;
+    
+  } catch (error) {
+    console.error('Error desmarcando capítulo:', error);
+    return false;
+  }
+}
 
   // ==================== GESTIÓN DE LECTORES ====================
   static async getReaders() {
@@ -442,31 +496,31 @@ export class BibleModel {
     }
   }
 
-  static async getChapterReadingsByBook(bookKey: string) {
-    try {
-      const readings = await sql`
-        SELECT 
-          c.chapter_number,
-          c.is_completed,
-          c.completed_at,
-          r.name as reader_name,
-          r.avatar_color,
-          cr.reading_duration_minutes,
-          cr.reading_notes
-        FROM chapters c
-        JOIN books b ON c.book_id = b.id
-        LEFT JOIN readers r ON c.read_by_reader_id = r.id
-        LEFT JOIN chapter_readings cr ON c.id = cr.chapter_id AND c.read_by_reader_id = cr.reader_id
-        WHERE b.key = ${bookKey}
-        ORDER BY c.chapter_number
-      `;
-      
-      return readings;
-    } catch (error) {
-      console.error('Error obteniendo lecturas por libro:', error);
-      throw error;
-    }
+static async getChapterReadingsByBook(bookKey: string) {
+  try {
+    const readings = await sql`
+      SELECT 
+        c.chapter_number,
+        c.is_completed,
+        c.completed_at,
+        c.reading_notes,
+        c.reading_duration_minutes,
+        r.name as reader_name,
+        r.avatar_color
+      FROM chapters c
+      JOIN books b ON c.book_id = b.id
+      LEFT JOIN readers r ON c.read_by_reader_id = r.id
+      WHERE b.key = ${bookKey}
+      ORDER BY c.chapter_number
+    `;
+
+    return readings;
+  } catch (error) {
+    console.error('Error obteniendo lecturas por libro:', error);
+    throw error;
   }
+}
+
 
   // ==================== BÚSQUEDA Y FILTROS ====================
   static async searchVerses(query: string, testament?: string, limit: number = 50) {

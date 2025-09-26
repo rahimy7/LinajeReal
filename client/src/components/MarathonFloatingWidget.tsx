@@ -362,7 +362,7 @@ export default function App() {
   return (
     <MarathonFloatingWidget
       position="bottom-right"
-      youtubeVideoId="HyoKx3hDnKQ"
+      youtubeVideoId="vrSKzwwba90"
     />
   );
 }
