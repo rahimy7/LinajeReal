@@ -58,15 +58,16 @@ export default function HeroSection() {
           {/* YouTube Video Player - Centrado pero más a la izquierda */}
           <div className="flex-1 max-w-3xl ml-8">
             <div className="relative w-full h-0 pb-[56.25%] rounded-lg overflow-hidden shadow-2xl">
-              <iframe
-                className="absolute top-0 left-0 w-full h-full"
-                src="https://www.youtube.com/embed/vrSKzwwba90?autoplay=1&mute=1&controls=1&rel=0"
-                title="Miami Central Spanish SDA - Transmisión en Vivo"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                data-testid="youtube-player"
-              />
+             <iframe
+  className="absolute top-0 left-0 w-full h-full"
+  src="https://www.youtube.com/embed/HyoKx3hDnKQ?autoplay=1&mute=1"
+  title="Miami Central Spanish SDA - Transmisión en Vivo"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+  data-testid="youtube-player"
+/>
+
             </div>
           </div>
 

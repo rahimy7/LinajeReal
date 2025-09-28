@@ -77,9 +77,7 @@ export default function Home() {
         <DownloadsSection />
         <CallToAction />
 
-       <MarathonFloatingWidget
-   
-/>
+       {/* <MarathonFloatingWidget/> */}
       </main>
       <Footer />
     </div>
