@@ -52,6 +52,7 @@ export default function RedesSociales() {
           <p className="mt-5 text-sm text-slate-500">El equipo autorizado accederá con su correo y contraseña para atender WhatsApp, Facebook e Instagram.</p>
         </section>
       )}
+      <footer className="border-t bg-white px-4 py-3 text-slate-600"><nav aria-label="Información legal" className="flex flex-wrap justify-center gap-4 text-sm"><a href="/privacidad" className="underline">Privacidad</a><a href="/condiciones-del-servicio" className="underline">Condiciones del servicio</a><a href="/eliminacion-de-datos" className="underline">Eliminación de datos</a></nav></footer>
     </main>
   );
 }
