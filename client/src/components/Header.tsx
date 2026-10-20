@@ -82,6 +82,8 @@ export default function Header() {
                 </button>
               </div>
 
+              <a href="/admin/redes-sociales" className="text-blue-700 font-semibold" data-testid="nav-redes-sociales">Redes sociales</a>
+
               {/* Admin Access Button */}
               <button
                 onClick={handleAdminAccess}
@@ -111,6 +113,7 @@ export default function Header() {
         <div className="lg:hidden mobile-menu active bg-white border-b" data-testid="mobile-menu">
           <div className="container mx-auto px-4 py-4">
             <div className="space-y-4">
+              <a href="/admin/redes-sociales" className="block text-blue-700 font-semibold">Redes sociales</a>
               <a href="#" className="block text-blue-600 font-semibold">Inicio</a>
               <a href="#" className="block text-gray-700">Departamentos</a>
               <a href="/biblia" className="block text-gray-700">Maratón Bíblico</a>
