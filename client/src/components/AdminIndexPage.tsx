@@ -74,6 +74,14 @@ const AdminIndexPage: React.FC = () => {
 
   const adminSections = [
     {
+      title: "Redes sociales",
+      description: "Atiende WhatsApp, Facebook e Instagram desde Linaje Real con el acceso de tu equipo",
+      icon: Shield,
+      href: "/admin/redes-sociales",
+      color: "blue",
+      features: ["Bandeja de conversaciones", "Contactos y campañas", "Administradores y agentes"]
+    },
+    {
       title: 'Dashboard Principal',
       description: 'Vista general completa del maratón con estadísticas detalladas y métricas en tiempo real',
       icon: BarChart3,

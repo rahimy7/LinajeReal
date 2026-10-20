@@ -12,6 +12,7 @@ import Header from "./components/Header";
 import Home from "@/pages/Home";
 import BibliaInteractiva from "./pages/BibliaInteractiva";
 import MaratonConfig from "./pages/MaratonConfig";
+import RedesSociales from "./pages/RedesSociales";
 import NotFound from "@/pages/not-found";
 
 // Importar nuevos componentes de administración
@@ -62,6 +63,8 @@ function Router() {
         </LayoutWithHeader>
       )} />
       
+      <Route path="/admin/redes-sociales" component={RedesSociales} />
+
       {/* Rutas de administración */}
       <Route path="/admin" component={() => (
         <AdminLayout>
