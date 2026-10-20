@@ -54,7 +54,8 @@ export default function Footer() {
         </div>
         
         <div className="border-t border-blue-800 pt-8 text-center text-blue-200 text-sm">
-          <p>&copy; Iglesia Adventista del Séptimo Día - Central Linaje Real. Todos los derechos reservados.</p>
+          <nav aria-label="Información legal" className="flex flex-wrap justify-center gap-4 text-sm"><a href="/privacidad" className="underline">Privacidad</a><a href="/condiciones-del-servicio" className="underline">Condiciones del servicio</a><a href="/eliminacion-de-datos" className="underline">Eliminación de datos</a></nav>
+          <p className="mt-4">&copy; Iglesia Adventista del Séptimo Día - Central Linaje Real. Todos los derechos reservados.</p>
         </div>
       </div>
     </footer>
