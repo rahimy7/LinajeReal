@@ -73,6 +73,7 @@ const AdminIndexPage: React.FC = () => {
   };
 
   const adminSections = [
+    { title: "Comunidad", description: "Atiende peticiones de oración, estudios bíblicos y participantes; administra actividades y fotografías", icon: Users, href: "/admin/comunidad", color: "blue", features: ["Solicitudes privadas", "Actividades y participantes", "Galería de fotos"] },
     {
       title: "Redes sociales",
       description: "Atiende WhatsApp, Facebook e Instagram desde Linaje Real con el acceso de tu equipo",
@@ -356,3 +357,4 @@ const AdminIndexPage: React.FC = () => {
 };
 
 export default AdminIndexPage;
+

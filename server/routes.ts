@@ -4,9 +4,11 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { omnichannelRouter } from "./omnichannel";
 import { legalRouter } from "./legal";
+import { communityRouter } from "./community";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.use(legalRouter);
+  app.use("/api/community", communityRouter);
   app.use("/api/omnichannel", omnichannelRouter);
 
   // Tus rutas existentes se mantienen aquí

@@ -38,6 +38,7 @@ export default function RedesSociales() {
           <MessageSquare className="text-blue-700" aria-hidden="true" />
           <div><h1 className="text-lg font-semibold">Linaje Real · Redes sociales</h1><p className="text-xs text-slate-600">Comunicación con nuestra comunidad</p></div>
         </div>
+        <a href="/admin/comunidad" className="rounded-lg border px-3 py-2 text-sm text-blue-700">Solicitudes, actividades y galería</a>
         <button className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-50" disabled={status.isFetching} onClick={() => { setFrameVersion(value => value + 1); void status.refetch(); }}>
           <RefreshCw size={16} aria-hidden="true" />Actualizar
         </button>

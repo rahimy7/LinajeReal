@@ -10,6 +10,7 @@ import DownloadsSection from "@/components/DownloadsSection";
 import CallToAction from "@/components/CallToAction";
 import Footer from "@/components/Footer";
 import MarathonFloatingWidget from "@/components/MarathonFloatingWidget";
+import CommunitySection from "@/components/CommunitySection";
 
 export default function Home() {
   const mockReadingProgress = {
@@ -25,6 +26,7 @@ export default function Home() {
       <main className="bg-white">
         <FeaturedContent />
         <NewsSection />
+        <CommunitySection />
         <section className="py-16">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-gray-800 mb-8">Destacados</h2>
