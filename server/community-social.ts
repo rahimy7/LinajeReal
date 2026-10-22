@@ -69,13 +69,21 @@ socialAdminRouter.post("/:id/publish", handler(async (req: any, res: any) => {
       result = await graph(config, `${config.id}/${post.image_url ? "photos" : "feed"}`, "POST", post.image_url ? { url: post.image_url, caption: post.message } : { message: post.message });
     } else {
       const container = await graph(config, `${config.id}/media`, "POST", { image_url: post.image_url, caption: post.message });
+      let ready = false;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const status = await graph(config, `${encodeURIComponent(container.id)}?fields=status_code`);
+        if (status.status_code === "FINISHED") { ready = true; break; }
+        if (["ERROR", "EXPIRED"].includes(status.status_code)) throw new Error("container unavailable");
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      if (!ready) throw new Error("container still processing");
       result = await graph(config, `${config.id}/media_publish`, "POST", { creation_id: container.id });
     }
     if (!result.id) throw new Error("missing ID");
     const externalId = String(result.post_id || result.id);
     let permalink: string | null = null;
     // Publication succeeded; failure to read the permalink must never cause a second post.
-    try { permalink = (await graph(config, `${encodeURIComponent(externalId)}?fields=${post.channel === "facebook" ? "permalink_url" : "permalink"}`))[post.channel === "facebook" ? "permalink_url" : "permalink"] || null; } catch {}
+    try { const candidate = (await graph(config, `${encodeURIComponent(externalId)}?fields=${post.channel === "facebook" ? "permalink_url" : "permalink"}`))[post.channel === "facebook" ? "permalink_url" : "permalink"]; permalink = safeUrl.safeParse(candidate).success ? candidate : null; } catch {}
     await db.query("UPDATE linaje_web.social_posts SET state='published',external_id=$1,permalink=$2 WHERE id=$3", [externalId,permalink,id]);
     res.json({ ok: true });
   } catch {
@@ -105,3 +113,4 @@ socialAdminRouter.patch("/:id", handler(async (req: any, res: any) => {
   const result = await db.query("UPDATE linaje_web.social_posts SET published=$1 WHERE id=$2 AND state IN ('published','imported') RETURNING id", [published,z.string().uuid().parse(req.params.id)]);
   res.status(result.rowCount ? 200 : 409).json({ ok: Boolean(result.rowCount) });
 }));
+
