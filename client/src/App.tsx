@@ -13,6 +13,7 @@ import Home from "@/pages/Home";
 import BibliaInteractiva from "./pages/BibliaInteractiva";
 import MaratonConfig from "./pages/MaratonConfig";
 import RedesSociales from "./pages/RedesSociales";
+import ComunidadAdmin from "./pages/ComunidadAdmin";
 import NotFound from "@/pages/not-found";
 
 // Importar nuevos componentes de administración
@@ -64,6 +65,7 @@ function Router() {
       )} />
       
       <Route path="/admin/redes-sociales" component={RedesSociales} />
+      <Route path="/admin/comunidad" component={ComunidadAdmin} />
 
       {/* Rutas de administración */}
       <Route path="/admin" component={() => (
