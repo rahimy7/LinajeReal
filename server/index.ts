@@ -74,7 +74,7 @@ async function initializeBibleDatabase() {
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
+    console.error("Request failed", status);
   });
 
   // importantly only setup vite in development and after
@@ -95,3 +95,4 @@ async function initializeBibleDatabase() {
   log(`serving on port ${port}`);
 });
 })();
+
