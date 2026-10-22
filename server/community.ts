@@ -10,7 +10,10 @@ let pool: Pool | undefined;
 let initialization: Promise<unknown> | undefined;
 async function database() {
   if (!process.env.COMMUNITY_DATABASE_URL) throw new Error("community unavailable");
-  pool ??= new Pool({ connectionString: process.env.COMMUNITY_DATABASE_URL, max: 5, connectionTimeoutMillis: 8000 });
+  if (!pool) {
+    pool = new Pool({ connectionString: process.env.COMMUNITY_DATABASE_URL, max: 5, connectionTimeoutMillis: 8000 });
+    pool.on("error", () => console.error("Community database connection interrupted"));
+  }
   initialization ??= pool.query(`CREATE SCHEMA IF NOT EXISTS linaje_web;
     CREATE TABLE IF NOT EXISTS linaje_web.requests (
       id uuid PRIMARY KEY, kind text NOT NULL, name text NOT NULL, contact text NOT NULL,
@@ -164,3 +167,4 @@ communityRouter.post("/requests", limit, wrap(async (req, res) => {
 }));
 
 export { database as communityDatabase };
+
