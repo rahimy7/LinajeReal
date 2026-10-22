@@ -27,14 +27,9 @@ La conexión de comunidad apunta a la misma base **exclusiva** del panel de rede
 
 ## Facebook e Instagram
 
-Se reutilizan, en el servidor, las conexiones almacenadas en `public.integration_settings` de esa misma base. Los tokens nunca se envían al visitante. Configurar las cuentas desde Ajustes del panel de redes; la presencia de credenciales no demuestra que Meta haya concedido todos los permisos.
+El panel lee las publicaciones existentes de las cuentas de la iglesia mediante sus conexiones de Meta. Permite importarlas, revisarlas y mostrarlas u ocultarlas en la página principal con enlace al original. Esta función no crea publicaciones ni envía contenido a las redes sociales.
 
-1. Crear un borrador para Facebook o Instagram. Instagram requiere una imagen JPEG con URL pública; esta versión publica una imagen, no reels, historias ni carruseles.
-2. Revisar el texto y foto y usar **Publicar ahora**. El botón requiere confirmación y la API acepta solo administradores autenticados.
-3. Para mostrar publicaciones en la web, usar **Importar publicaciones** y luego **Mostrar en la web** en cada elemento revisado. No hay sincronización automática ni importación de comentarios/mensajes privados. Una nueva importación actualiza el contenido y lo devuelve a revisión antes de mostrarlo.
-4. Se conserva el estado de cada intento. Si hay un resultado incierto, comprobar directamente la red antes de crear otro borrador. No se reintenta automáticamente una publicación para evitar duplicados. Si una publicación queda «En proceso» después de un reinicio, comprobar igualmente la cuenta.
-
-Meta puede requerir aprobación de la aplicación y permisos adicionales de publicación/lectura. Facebook utiliza Pages API; Instagram requiere una cuenta profesional. Con Facebook Login y con Instagram Login los permisos son distintos. Fuentes oficiales: [Pages API](https://developers.facebook.com/docs/pages-api/posts/), [Instagram API de Meta](https://www.postman.com/meta/instagram/documentation/6yqw8pt/instagram-api).
+La importación es manual, de las últimas doce publicaciones por cuenta. Cada importación devuelve los elementos recibidos a revisión antes de mostrarlos. Meta debe conceder acceso de lectura a las cuentas conectadas. Los tokens se utilizan exclusivamente en el servidor.
 
 ## Verificación realizada
 
